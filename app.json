@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "RecipeSocial",
+    "slug": "recipesocial",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourname.recipesocial"
+    },
+    "android": {
+      "package": "com.yourname.recipesocial",
+      "adaptiveIcon": {
+        "backgroundColor": "#0D0D0D"
+      }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow RecipeSocial to access your photos to upload recipe images.",
+          "cameraPermission": "Allow RecipeSocial to use your camera."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow RecipeSocial to access your camera for AI ingredient scanning."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow RecipeSocial to access your microphone to record recipe instructions."
+        }
+      ],
+      "expo-secure-store",
+      "expo-video"
+    ]
+  }
+}

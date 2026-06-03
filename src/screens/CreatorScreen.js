@@ -1,0 +1,190 @@
+import React, { useState } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity,
+  SafeAreaView, StyleSheet,
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
+import { RECIPES } from '../data/mockData';
+import { Avatar, Stars, StatCell } from '../components/SharedComponents';
+
+export default function CreatorScreen() {
+  const { theme }  = useTheme();
+  const navigation = useNavigation();
+  const route      = useRoute();
+  const { creator, followedCreators: initialFollowed = [], onToggleFollow } = route.params || {};
+
+  const [followedCreators, setFollowed] = useState(initialFollowed);
+  const isFollowed = followedCreators.includes(creator?.id);
+
+  const toggle = () => {
+    setFollowed(prev =>
+      prev.includes(creator.id) ? prev.filter(x => x !== creator.id) : [...prev, creator.id]
+    );
+    onToggleFollow && onToggleFollow(creator.id);
+  };
+
+  if (!creator) return null;
+
+  const theirRecipes = RECIPES.filter(r => r.creatorId === creator.id);
+  const featuredRecipes = theirRecipes.filter(r => creator.featured?.includes(r.id));
+  const heroRecipe = theirRecipes[0];
+
+  return (
+    <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        {/* Cover */}
+        <View style={[s.cover, { backgroundColor: heroRecipe?.cardColor || '#1A1410' }]}>
+          {heroRecipe && <View style={[s.coverGlow, { backgroundColor: heroRecipe.accentColor + '55' }]} />}
+          <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+            <Text style={{ color: '#fff', fontSize: 18 }}>←</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={s.profileSection}>
+          {/* Avatar */}
+          <View style={[s.avatarWrap, { borderColor: theme.bg }]}>
+            <Avatar initial={creator.initial} color={creator.avatarColor} size={76} />
+          </View>
+
+          {/* Name + follow */}
+          <View style={s.nameRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.name, { color: theme.text }]}>{creator.name}</Text>
+              <Text style={[s.handle, { color: theme.muted }]}>@{creator.handle}</Text>
+            </View>
+            <TouchableOpacity onPress={toggle}
+              style={[s.followBtn, {
+                backgroundColor: isFollowed ? theme.pillBg : theme.accent,
+                borderColor:     isFollowed ? theme.border : theme.accent,
+              }]}
+            >
+              <Text style={{ color: isFollowed ? theme.muted : '#fff', fontSize: 14, fontWeight: '600' }}>
+                {isFollowed ? 'Following' : '+ Follow'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bio */}
+          <Text style={[s.bio, { color: theme.subtext }]}>{creator.bio}</Text>
+
+          {/* Specialty badge */}
+          <View style={[s.specialtyBadge, { backgroundColor: theme.accentSoft, borderColor: theme.accent + '33' }]}>
+            <Text style={{ fontSize: 14 }}>🍽</Text>
+            <Text style={{ fontSize: 12, color: theme.accent, fontWeight: '500' }}>
+              Specialises in {creator.specialty}
+            </Text>
+          </View>
+
+          {/* Stats */}
+          <View style={[s.statsRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <StatCell value={creator.recipeCount}            label="Recipes"   borderRight />
+            <StatCell value={creator.followers.toLocaleString()} label="Followers" borderRight />
+            <StatCell value={creator.following}              label="Following" />
+          </View>
+
+          {/* Action buttons */}
+          <View style={s.actionRow}>
+            <TouchableOpacity onPress={toggle}
+              style={[s.actionBtn, { backgroundColor: isFollowed ? theme.pillBg : theme.accent, flex: 2 }]}
+            >
+              <Text style={{ color: isFollowed ? theme.muted : '#fff', fontWeight: '600', fontSize: 14 }}>
+                {isFollowed ? '✓ Following' : '+ Follow'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.actionBtn, { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, flex: 1 }]}
+            >
+              <Text style={{ color: theme.text, fontSize: 14 }}>↗ Share</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Featured Recipes */}
+        {featuredRecipes.length > 0 && (
+          <View style={s.section}>
+            <Text style={[s.sectionTitle, { color: theme.text }]}>⭐ Featured Recipes</Text>
+            <View style={s.featuredGrid}>
+              {featuredRecipes.map(r => (
+                <TouchableOpacity
+                  key={r.id}
+                  onPress={() => navigation.navigate('RecipeDetail', { recipe: r, followedCreators, onToggleFollow: toggle })}
+                  style={[s.featuredCard, { backgroundColor: r.cardColor, borderColor: theme.border }]}
+                >
+                  <View style={[StyleSheet.absoluteFillObject, { backgroundColor: r.accentColor + '33' }]} />
+                  <Text style={{ fontSize: 36 }}>{r.emoji}</Text>
+                  <Text style={[s.featuredTitle, { color: '#fff' }]} numberOfLines={2}>{r.title}</Text>
+                  <View style={s.featuredMeta}>
+                    <Stars rating={r.rating} size={10} />
+                    <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}> {r.rating}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* All Recipes */}
+        <View style={s.section}>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>
+            All Recipes ({theirRecipes.length})
+          </Text>
+          {theirRecipes.map(r => (
+            <TouchableOpacity
+              key={r.id}
+              onPress={() => navigation.navigate('RecipeDetail', { recipe: r, followedCreators, onToggleFollow: toggle })}
+              style={[s.recipeRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+            >
+              <View style={[s.recipeEmoji, { backgroundColor: r.cardColor }]}>
+                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: r.accentColor + '33' }]} />
+                <Text style={{ fontSize: 26 }}>{r.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.recipeTitle, { color: theme.text }]} numberOfLines={1}>{r.title}</Text>
+                <Text style={[s.recipeMeta, { color: theme.muted }]}>
+                  {r.meal} · {r.cuisine} · {r.time}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 }}>
+                  <Stars rating={r.rating} size={11} />
+                  <Text style={{ fontSize: 11, color: theme.muted }}>
+                    {r.rating} · ♥ {r.likes.toLocaleString()} · 💬 {r.commentCount}
+                  </Text>
+                </View>
+              </View>
+              <Text style={{ color: theme.muted, fontSize: 18 }}>›</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  safe:           { flex: 1 },
+  scroll:         { paddingBottom: 44 },
+  cover:          { height: 180, position: 'relative', justifyContent: 'flex-end' },
+  coverGlow:      { ...StyleSheet.absoluteFillObject },
+  backBtn:        { position: 'absolute', top: 16, left: 16, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 20, width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  profileSection: { padding: 16, gap: 12 },
+  avatarWrap:     { marginTop: -38, borderWidth: 4, borderRadius: 42, alignSelf: 'flex-start' },
+  nameRow:        { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
+  name:           { fontSize: 22, fontWeight: '700', marginBottom: 2 },
+  handle:         { fontSize: 14 },
+  followBtn:      { paddingHorizontal: 20, paddingVertical: 9, borderRadius: 100, borderWidth: 1 },
+  bio:            { fontSize: 14, lineHeight: 22 },
+  specialtyBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
+  statsRow:       { flexDirection: 'row', borderRadius: 16, overflow: 'hidden', borderWidth: 1 },
+  actionRow:      { flexDirection: 'row', gap: 10 },
+  actionBtn:      { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  section:        { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, gap: 10 },
+  sectionTitle:   { fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  featuredGrid:   { flexDirection: 'row', gap: 10 },
+  featuredCard:   { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center', gap: 6, overflow: 'hidden', borderWidth: 1, minHeight: 130 },
+  featuredTitle:  { fontSize: 12, fontWeight: '600', textAlign: 'center', lineHeight: 16 },
+  featuredMeta:   { flexDirection: 'row', alignItems: 'center' },
+  recipeRow:      { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, gap: 12 },
+  recipeEmoji:    { width: 54, height: 54, borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  recipeTitle:    { fontSize: 15, fontWeight: '600', marginBottom: 2 },
+  recipeMeta:     { fontSize: 12 },
+});
