@@ -1,4 +1,3 @@
-import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,9 +13,8 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen() {
   const { theme }  = useTheme();
-  const navigation = useNavigation();
 
-    const { login, register } = useAuth();
+  const { login, register } = useAuth();
 
   const [mode, setMode]         = useState('login');   // 'login' | 'register'
   const [name, setName]         = useState('');
@@ -47,13 +45,11 @@ export default function LoginScreen() {
           password
         );
 
-        console.log('Registration success:', data);
-
         Alert.alert(
-          'Account created',
-          'You can now log in with your credentials.'
+          'Welcome!',
+          `Account created successfully. Hi ${data.user.name}!`
         );
-        setMode('login');
+        console.log('Registration success:', data);
       }
   }
     catch (err) {

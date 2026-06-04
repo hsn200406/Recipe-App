@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../components/RecipeCard';
 import { Avatar } from '../components/SharedComponents';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { RECIPES } from '../data/mockData'; // To test with moch data
 // import { recipeAPI } from '../services/api';
@@ -27,6 +28,10 @@ export default function HomeScreen() {
   const [animating, setAnimating] = useState(false);
   // const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const goToRecipe = (recipe) => {
+    navigation.navigate('RecipeDetails', { recipe });
+  };
 
   // const loadFeed = async () => {
   //   try {
@@ -112,7 +117,7 @@ export default function HomeScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <Avatar initial="A" color={theme.accent} size={40} />
+          <Avatar initial={user?.name?.charAt(0).toUpperCase() || '?'} color={theme.accent} size={40} />
         </View>
       </View>
       
@@ -166,6 +171,7 @@ export default function HomeScreen() {
                 recipe={r}
                 followedCreators={followedCreators}
                 onToggleFollow={toggleFollow}
+                onPress={() => goToRecipe(r)}
               />
             ))
           )}

@@ -1,61 +1,181 @@
 import * as SecureStore from 'expo-secure-store';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-// 🔌 Replace with your backend URL (see SETUP.md)
+// 🔌 Replace with your backend URL
 export const API_BASE_URL = 'http://192.168.0.103:5000/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
+
+const defaultUser = {
+  id: null,
+  name: '',
+  email: '',
+  likedRecipes: [],
+  savedRecipes: [],
+  following: [],
+};
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);
-  const [token, setToken]     = useState(null);
+  const [user, setUser] = useState(defaultUser);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ── Hydrate from storage ─────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const t = await SecureStore.getItemAsync('jwt');
-        const u = await SecureStore.getItemAsync('user');
-        if (t && u) { setToken(t); setUser(JSON.parse(u)); }
-      } catch (_) {}
-      finally { setLoading(false); }
+        const storedToken = await SecureStore.getItemAsync('jwt');
+        const storedUser = await SecureStore.getItemAsync('user');
+
+        if (storedToken && storedUser) {
+          const parsed = JSON.parse(storedUser);
+
+          setToken(storedToken);
+          setUser({
+            ...defaultUser,
+            ...parsed,
+            likedRecipes: parsed.likedRecipes || [],
+            savedRecipes: parsed.savedRecipes || [],
+            following: parsed.following || [],
+          });
+        }
+      } catch (err) {
+        console.log('Auth restore error:', err);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
-  const login = async (email, password) => {
-    const res  = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Login failed');
-    await _save(data.token, data.user);
-  };
+  // ── Helpers ──────────────────────────────────────────────────────────
+  const _save = async (tok, usr) => {
+    await SecureStore.setItemAsync('jwt', tok);
+    await SecureStore.setItemAsync('user', JSON.stringify(usr));
 
-  const register = async (name, handle, email, password) => {
-    const res  = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, handle, email, password }),
+    setToken(tok);
+    setUser({
+      ...defaultUser,
+      ...usr,
+      likedRecipes: usr.likedRecipes || [],
+      savedRecipes: usr.savedRecipes || [],
+      following: usr.following || [],
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Registration failed');
-    await _save(data.token, data.user);
   };
 
   const logout = async () => {
     await SecureStore.deleteItemAsync('jwt');
     await SecureStore.deleteItemAsync('user');
-    setToken(null); setUser(null);
+
+    setToken(null);
+    setUser(defaultUser);
   };
 
-  const _save = async (tok, usr) => {
-    await SecureStore.setItemAsync('jwt', tok);
-    await SecureStore.setItemAsync('user', JSON.stringify(usr));
-    setToken(tok); setUser(usr);
+  // ── Auth calls ───────────────────────────────────────────────────────
+  const login = async (email, password) => {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Login failed');
+
+    await _save(data.token, data.user);
+    return data;
+  };
+
+  const register = async (name, handle, email, password) => {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, handle, email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Registration failed');
+
+    await _save(data.token, data.user);
+    return data;
+  };
+
+  // ── UI state helpers ─────────────────────────────────────────────────
+const toggleLike = async (recipeId) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/user/like/${recipeId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error('Failed to like recipe');
+
+    const updatedLikes = await res.json();
+
+    // update local user state to match backend
+    setUser(prev => ({
+      ...prev,
+      likedRecipes: updatedLikes,
+    }));
+
+  } catch (err) {
+    console.log('Like error:', err.message);
+  }
+};
+
+const toggleSave = async (recipeId) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/user/save/${recipeId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error('Save failed');
+
+    const updatedSaved = await res.json();
+
+    setUser(prev => ({
+      ...prev,
+      savedRecipes: updatedSaved,
+    }));
+
+  } catch (err) {
+    console.log(err.message);
+  }
+};
+
+  const toggleFollow = (creatorId) => {
+    setUser(prev => {
+      const following = prev.following.includes(creatorId);
+
+      return {
+        ...prev,
+        following: following
+          ? prev.following.filter(id => id !== creatorId)
+          : [...prev.following, creatorId],
+      };
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, register }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        toggleLike,
+        toggleSave,
+        toggleFollow,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Toggle } from '../components/SharedComponents';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 function SettingsRow({ icon, label, right, onPress, danger, last }) {
@@ -44,6 +45,7 @@ function SettingsSection({ title, children }) {
 
 export default function SettingsScreen() {
   const { theme, dark, toggleDark } = useTheme();
+  const { logout, user } = useAuth();
   const navigation = useNavigation();
 
   const [notifLikes,    setNotifLikes]    = useState(true);
@@ -69,11 +71,17 @@ export default function SettingsScreen() {
         {/* Profile card */}
         <View style={[s.profileCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={[s.profileAvatar, { backgroundColor: theme.accent }]}>
-            <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>A</Text>
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>
+              {user?.name?.charAt(0).toUpperCase() || '?'}
+            </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[s.profileName, { color: theme.text }]}>Alex Rivera</Text>
-            <Text style={[s.profileHandle, { color: theme.muted }]}>@alexcooks</Text>
+            <Text style={[s.profileName, { color: theme.text }]}>
+              {user?.name || 'Unknown User'}
+            </Text>
+            <Text style={[s.profileHandle, { color: theme.muted }]}>
+              @{user?.handle || 'unknown'}
+              </Text>
           </View>
           <TouchableOpacity
             style={[s.editProfileBtn, { borderColor: theme.border }]}
@@ -138,7 +146,9 @@ export default function SettingsScreen() {
               { 
                 text: 'Log Out',
                 style: 'destructive',
-                onPress: () => navigation.replace('Login'),
+                onPress: async () => {
+                  await logout();
+                },
                },
             ])}
           />

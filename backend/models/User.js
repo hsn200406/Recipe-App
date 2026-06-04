@@ -15,6 +15,18 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true
+  },
+  likedRecipes: {
+    type: [String],
+    default: []
+  },
+  savedRecipes: {
+    type: [String],
+    default: []
+  },
+  following: {
+    type: [String],
+    default: [] // Array of followed creator IDs
   }
 }, { timestamps: true });
 
