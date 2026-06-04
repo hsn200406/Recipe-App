@@ -78,14 +78,14 @@ function MainTabs() {
 }
 
 export default function RootNavigator() {
-  const { user, loading } = useAuth();
+  const { token, loading } = useAuth();
 
-  if (loading) return null; // or a splash screen
+  if (loading) return null;
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-      {user ? (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {token ? (
         <>
-          {/* LOGGED IN FLOW */}
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
           <Stack.Screen name="Creator" component={CreatorScreen} />
@@ -93,10 +93,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Settings" component={SettingsScreen} />
         </>
       ) : (
-        <>
-          {/* LOGGED OUT FLOW */}
-          <Stack.Screen name="Login" component={LoginScreen} />
-        </>
+        <Stack.Screen name="Login" component={LoginScreen} />
       )}
     </Stack.Navigator>
   );

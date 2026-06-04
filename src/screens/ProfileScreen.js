@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity,
-  SafeAreaView, StyleSheet, Alert,
-} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../context/ThemeContext';
-import { RECIPES, CREATORS } from '../data/mockData';
+import { useState } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Stars, StatCell } from '../components/SharedComponents';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { CREATORS, RECIPES } from '../data/mockData';
 
 export default function ProfileScreen() {
   const { theme }  = useTheme();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('recipes');
+  const { user } = useAuth();
 
   // My profile data (replace with useAuth() user once backend is connected)
   const me = {

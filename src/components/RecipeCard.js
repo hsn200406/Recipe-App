@@ -15,7 +15,11 @@ import { Avatar, MacroBar, Stars } from './SharedComponents';
 function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const creator = CREATORS[recipe.creatorId];
+  const creator = CREATORS?.[recipe.creatorId] || {
+    handle: 'unknown',
+    initial: '?',
+    avatarColor: '#999'
+  };
   const [liked, setLiked]       = useState(recipe.liked);
   const [likeCount, setLikeCount] = useState(recipe.likes);
   const [saved, setSaved]       = useState(recipe.saved);

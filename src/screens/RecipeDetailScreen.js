@@ -204,10 +204,15 @@ export default function RecipeDetailScreen() {
   const route      = useRoute();
   const { recipe: initialRecipe, followedCreators = [], onToggleFollow } = route.params || {};
 
-  const [recipe, setRecipe]       = useState(initialRecipe);
+  const recipe = initialRecipe || {};
+  const safeRecipe = {
+    ...recipe,
+    ingredients: recipe?.ingredients || [],
+    steps: recipe?.steps || [],
+    tags: recipe?.tags || [],
+  };
   const [tab, setTab]             = useState('ingredients');
-  const [checked
-    , setChecked]= useState([]);
+  const [checked, setChecked]= useState([]);
   const [liked, setLiked]         = useState(initialRecipe?.liked);
   const [likeCount, setLikeCount] = useState(initialRecipe?.likes);
   const [saved, setSaved]         = useState(initialRecipe?.saved);
@@ -217,7 +222,14 @@ export default function RecipeDetailScreen() {
   const [showReview, setShowReview] = useState(false);
 
   if (!recipe) return null;
-  const creator    = CREATORS[recipe.creatorId];
+  const creator = CREATORS?.[recipe.creatorId] || {
+    handle: 'unknown',
+    initial: '?',
+    avatarColor: '#999',
+    name: 'Unknown Creator',
+    specialty: '',
+    followers: 0
+  };
   const isFollowed = followedCreators.includes(recipe.creatorId);
   const fmtCount   = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
 
@@ -262,7 +274,7 @@ export default function RecipeDetailScreen() {
           <Text style={[s.title, { color: theme.text }]}>{recipe.title}</Text>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
-          {[recipe.meal, recipe.cuisine, ...recipe.tags].map((t, i) => (
+          {[recipe.meal, recipe.cuisine, ...safeRecipe.tags].map((t, i) => (
             <View key={i} style={[s.tag, { backgroundColor: i < 2 ? theme.accentSoft : theme.pillBg, borderColor: i < 2 ? theme.accent + '44' : theme.border }]}>
               <Text style={{ fontSize: 11, color: i < 2 ? theme.accent : theme.pillText, fontWeight: i < 2 ? '600' : '400' }}>{t}</Text>
             </View>
@@ -354,7 +366,7 @@ export default function RecipeDetailScreen() {
         {/* Ingredients */}
         {tab === 'ingredients' && (
           <View>
-            {recipe.ingredients.map((ing, i) => (
+            {safeRecipe.ingredients.map((ing, i) => (
               <View key={i} style={[s.ingRow, { borderBottomColor: theme.border }]}>
                 <Text style={[s.ingQty, { color: recipe.accentColor }]}>{ing.qty}</Text>
                 <Text style={[s.ingName, { color: theme.text }]}>{ing.name}</Text>
@@ -366,8 +378,8 @@ export default function RecipeDetailScreen() {
         {/* Steps */}
         {tab === 'steps' && (
           <View style={{ gap: 10 }}>
-            {recipe.steps.map((step, i) => {
-              const done = checkedSteps.includes(i);
+            {safeRecipe.steps.map((step, i) => {
+              const done = checked.includes(i);
               return (
                 <TouchableOpacity key={i} onPress={() => toggleStep(i)}
                   style={[s.stepCard, {

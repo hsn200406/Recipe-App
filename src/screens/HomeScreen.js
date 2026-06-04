@@ -13,8 +13,8 @@ import RecipeCard from '../components/RecipeCard';
 import { Avatar } from '../components/SharedComponents';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { RECIPES } from '../data/mockData'; // To test with moch data
-// import { recipeAPI } from '../services/api';
+// import { RECIPES } from '../data/mockData'; // To test with moch data
+import { recipeAPI } from '../services/recipeAPI';
 
 // ── Home Screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -26,11 +26,11 @@ export default function HomeScreen() {
   const unreadNotifs = 3;
   const opacity = useRef(new Animated.Value(1)).current;
   const [animating, setAnimating] = useState(false);
-  // const [feed, setFeed] = useState([]);
+  const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const goToRecipe = (recipe) => {
-    navigation.navigate('RecipeDetails', { recipe });
+    navigation.navigate('RecipeDetail', { recipe });
   };
 
   // const loadFeed = async () => {
@@ -60,6 +60,24 @@ export default function HomeScreen() {
   //   loadFeed();
   // }, [feedTab]);
 
+  const loadFeed = async () => {
+    try {
+      setLoading(true);
+
+      const data = await recipeAPI.getFeed();
+
+      setFeed(data);
+    } catch (err) {
+      console.log("Feed error:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadFeed();
+  }, []);
+
   useEffect(() => {
     setAnimating(true);
 
@@ -85,15 +103,15 @@ export default function HomeScreen() {
   }, []);
 
   // Recommendation algorithm — boost followed creators + rating + popularity (FOR MOCH DATA)
-  const scored = RECIPES.map(r => {
-    let s = r.rating * 10 + Math.log(r.likes + 1) * 4 + r.saves * 0.04;
-    if (followedCreators.includes(r.creatorId)) s += 50;
-    return { ...r, _score: s };
-  }).sort((a, b) => b._score - a._score);
+  // const scored = RECIPES.map(r => {
+  //   let s = r.rating * 10 + Math.log(r.likes + 1) * 4 + r.saves * 0.04;
+  //   if (followedCreators.includes(r.creatorId)) s += 50;
+  //   return { ...r, _score: s };
+  // }).sort((a, b) => b._score - a._score);
 
-  const feed = feedTab === 'following'
-    ? scored.filter(r => followedCreators.includes(r.creatorId))
-    : scored;
+  // const feed = feedTab === 'following'
+  //   ? scored.filter(r => followedCreators.includes(r.creatorId))
+  //   : scored;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
@@ -167,11 +185,11 @@ export default function HomeScreen() {
           ) : (
             feed.map(r => (
               <RecipeCard
-                key={r.id}
+                key={r._id}
                 recipe={r}
                 followedCreators={followedCreators}
                 onToggleFollow={toggleFollow}
-                onPress={() => goToRecipe(r)}
+                onPress={() => navigation.navigate('RecipeDetail', { recipe: r })}
               />
             ))
           )}
