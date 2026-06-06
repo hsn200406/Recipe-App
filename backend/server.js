@@ -3,6 +3,16 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+if (!process.env.MONGODB_URI) {
+  console.error("Missing MONGODB_URI in .env");
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET) {
+  console.error("Missing JWT_SECRET in .env");
+  process.exit(1);
+}
+
 const app = express();
 
 // middleware

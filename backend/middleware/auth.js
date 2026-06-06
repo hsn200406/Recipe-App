@@ -18,8 +18,9 @@ module.exports = function (req, res, next) {
     // 4. Attach user id to request
     req.userId = decoded.userId;
 
-      console.log("AUTH MIDDLEWARE HIT");
-      console.log("Token:", token);
+    // Debugging logs
+    //   console.log("AUTH MIDDLEWARE HIT");
+    //   console.log("Token:", token);
 
     // 5. Continue to route
     next();

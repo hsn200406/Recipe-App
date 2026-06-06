@@ -7,20 +7,30 @@ const User = require('../models/User');
 // REGISTER
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, handle, email, password } = req.body;
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: 'User already exists' });
+    if (!name || !handle || !email || !password) {
+      return res.status(400).json({ message: 'Please fill in all required fields' });
+    }
+
+    const existing = await User.findOne({
+      $or: [{ email }, { handle }]
+    });
+
+    if (existing) {
+      return res.status(400).json({ message: 'Email or handle already exists' });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name,
+      handle,
       email,
       password: hashedPassword
     });
 
-     // Generate JWT for new user
+    // Generate JWT for new user
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -33,7 +43,15 @@ router.post('/register', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        handle: user.handle,
+        email: user.email,
+        bio: user.bio,
+        avatarColor: user.avatarColor,
+        specialty: user.specialty,
+        likedRecipes: user.likedRecipes,
+        savedRecipes: user.savedRecipes,
+        following: user.following,
+        followers: user.followers
       }
     });
 
@@ -67,7 +85,15 @@ router.post('/login', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        handle: user.handle,
+        email: user.email,
+        bio: user.bio,
+        avatarColor: user.avatarColor,
+        specialty: user.specialty,
+        likedRecipes: user.likedRecipes,
+        savedRecipes: user.savedRecipes,
+        following: user.following,
+        followers: user.followers
       }
     });
 

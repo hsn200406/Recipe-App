@@ -6,27 +6,61 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+
+  handle: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+
   email: {
     type: String,
     required: true,
     unique: true,
-    lowercase: true
+    lowercase: true,
+    trim: true
   },
+
   password: {
     type: String,
     required: true
   },
+
+  bio: {
+    type: String,
+    default: ''
+  },
+
+  avatarColor: {
+    type: String,
+    default: '#FF5C3A'
+  },
+
+  specialty: {
+    type: String,
+    default: ''
+  },
+
   likedRecipes: {
     type: [String],
     default: []
   },
+
   savedRecipes: {
     type: [String],
     default: []
   },
+
   following: {
     type: [String],
-    default: [] // Array of followed creator IDs
+    default: []
+  },
+
+  followers: {
+    type: [String],
+    default: []
   }
 }, { timestamps: true });
 
