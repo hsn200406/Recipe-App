@@ -1,23 +1,41 @@
-import React, { useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  SafeAreaView, StyleSheet,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../context/ThemeContext';
-import { RECIPES, CREATORS } from '../data/mockData';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Stars } from '../components/SharedComponents';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { CREATORS } from '../data/mockData';
+import { recipeAPI } from '../services/api';
 
 export default function SavedScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const [savedIds, setSavedIds] = useState(
-    RECIPES.filter(r => r.saved).map(r => r.id)
+  const { token, toggleSave } = useAuth();
+  const [savedRecipes, setSavedRecipes] = useState([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadSaved = async () => {
+        try {
+          const data = await recipeAPI.getSaved(token);
+          setSavedRecipes(data || []);
+        } catch (err) {
+          console.log('Saved recipes error:', err.message);
+        }
+      };
+
+      if (token) {
+        loadSaved();
+      }
+    }, [token])
   );
-
-  const savedRecipes = RECIPES.filter(r => savedIds.includes(r.id));
-
-  const unsave = (id) => setSavedIds(prev => prev.filter(x => x !== id));
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
@@ -43,10 +61,12 @@ export default function SavedScreen() {
           </View>
         ) : (
           savedRecipes.map(recipe => {
-            const creator = CREATORS[recipe.creatorId];
+          const creator = typeof recipe.creatorId === 'object'
+            ? recipe.creatorId
+            : CREATORS[recipe.creatorId] || {};
             return (
               <TouchableOpacity
-                key={recipe.id}
+                key={recipe._id || recipe.id}
                 activeOpacity={0.88}
                 onPress={() => navigation.navigate('RecipeDetail', { recipe })}
                 style={[s.card, { backgroundColor: theme.card, borderColor: theme.border }]}
@@ -63,13 +83,18 @@ export default function SavedScreen() {
                     <Text style={[s.cardTitle, { color: theme.text }]} numberOfLines={1}>
                       {recipe.title}
                     </Text>
-                    <TouchableOpacity onPress={() => unsave(recipe.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Text style={{ fontSize: 18, color: theme.gold }}>🔖</Text>
+                    <TouchableOpacity onPress={async () => {
+                      const recipeId = recipe._id || recipe.id;
+
+                        setSavedRecipes(prev => prev.filter(r => (r._id || r.id) !== recipeId));
+                        await toggleSave(recipeId);
+                      }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={{ fontSize: 22, color: theme.gold }}> ★</Text>
                     </TouchableOpacity>
                   </View>
 
                   <View style={s.metaRow}>
-                    <Avatar initial={creator.initial} color={creator.avatarColor} size={16} />
+                    <Avatar initial={creator.initial || creator.name?.charAt(0) || '?'} color={creator.avatarColor || theme.accent} size={16} />
                     <Text style={[s.metaText, { color: theme.muted }]}>@{creator.handle}</Text>
                   </View>
 
@@ -88,7 +113,7 @@ export default function SavedScreen() {
                   <View style={s.statsRow}>
                     <Stars rating={recipe.rating} size={11} />
                     <Text style={[s.statsText, { color: theme.muted }]}>
-                      {recipe.rating} · {recipe.cal} kcal
+                      {recipe.rating} · {recipe.calories} kcal
                     </Text>
                   </View>
                 </View>

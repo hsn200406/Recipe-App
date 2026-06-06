@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -12,141 +12,241 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Stars, StatCell } from '../components/SharedComponents';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { CREATORS, RECIPES } from '../data/mockData';
+import { API_BASE_URL, recipeAPI, userAPI } from '../services/api';
 
 export default function ProfileScreen() {
-  const { theme }  = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation();
-  const [activeTab, setActiveTab] = useState('recipes');
-  const { user } = useAuth();
+  const { user, token, logout } = useAuth();
 
-  // My profile data (replace with useAuth() user once backend is connected)
-  const me = {
-    name: 'Alex Rivera',
-    handle: 'alexcooks',
-    initial: 'A',
-    bio: 'Home cook obsessed with ramen, tacos, and anything under 30 min 🍜\nVancouver, BC 🇨🇦',
-    specialty: 'Asian · Italian',
-    recipeCount: 12,
-    followers: 348,
-    following: 91,
+  const [activeTab, setActiveTab] = useState('recipes');
+  const [profile, setProfile] = useState(user);
+  const [myRecipes, setMyRecipes] = useState([]);
+  const [likedRecipes, setLikedRecipes] = useState([]);
+  const [savedRecipes, setSavedRecipes] = useState([]);
+
+  const fetchMyRecipes = async () => {
+    const res = await fetch(`${API_BASE_URL}/recipes/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to load your recipes');
+    }
+
+    return data;
   };
 
-  // Show a few recipes as "mine"
-  const myRecipes  = RECIPES.slice(0, 3);
-  const likedRecipes = RECIPES.filter(r => r.liked);
+  const loadProfile = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const freshUser = await userAPI.getMe(token);
+      setProfile(freshUser);
+
+      const mine = await fetchMyRecipes();
+      setMyRecipes(Array.isArray(mine) ? mine : []);
+
+      const saved = await recipeAPI.getSaved(token);
+      setSavedRecipes(Array.isArray(saved) ? saved : []);
+
+      const feed = await recipeAPI.getFeed(token);
+      const recipes = Array.isArray(feed?.recipes) ? feed.recipes : feed || [];
+      const likedIds = freshUser.likedRecipes || [];
+
+      setLikedRecipes(
+        recipes.filter(recipe => likedIds.includes(recipe._id || recipe.id))
+      );
+    } catch (err) {
+      console.log('Profile error:', err.message);
+    }
+  }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile])
+  );
+
+  const displayUser = profile || user || {};
+  const initial = displayUser.name?.charAt(0)?.toUpperCase() || '?';
+  const recipeCount = myRecipes.length;
+  const followerCount = displayUser.followers?.length || 0;
+  const followingCount = displayUser.following?.length || 0;
+
+  const openRecipe = (recipe) => {
+    const recipeId = recipe._id || recipe.id;
+
+    navigation.navigate('RecipeDetail', {
+      recipe: {
+        ...recipe,
+        isLiked: (displayUser.likedRecipes || []).includes(recipeId),
+        isSaved: (displayUser.savedRecipes || []).includes(recipeId),
+      },
+    });
+  };
+
+  const recipesToShow =
+    activeTab === 'recipes'
+      ? myRecipes
+      : activeTab === 'liked'
+        ? likedRecipes
+        : savedRecipes;
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* Cover */}
         <View style={[s.cover, { backgroundColor: theme.dark ? '#1A1208' : '#F0EDE8' }]}>
           <TouchableOpacity
             onPress={() => navigation.navigate('Settings')}
-            style={[s.settingsBtn, { backgroundColor: 'rgba(0,0,0,0.35)', borderColor: 'rgba(255,255,255,0.15)' }]}
+            style={s.topIconBtn}
           >
-            <Text style={{ fontSize: 18 }}>⚙</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Notifications')}
-            style={[s.notifBtn, { backgroundColor: 'rgba(0,0,0,0.35)', borderColor: 'rgba(255,255,255,0.15)' }]}
-          >
-            <Text style={{ fontSize: 18 }}>🔔</Text>
-            <View style={[s.badge, { backgroundColor: theme.accent }]}>
-              <Text style={s.badgeText}>3</Text>
-            </View>
+            <Text style={s.topIconText}>⚙</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Avatar */}
         <View style={s.avatarContainer}>
           <View style={[s.avatarBorder, { borderColor: theme.bg }]}>
-            <Avatar initial={me.initial} color={theme.accent} size={76} />
+            <Avatar
+              initial={initial}
+              color={displayUser.avatarColor || theme.accent}
+              size={76}
+            />
           </View>
         </View>
 
-        {/* Info */}
         <View style={s.infoSection}>
-          <Text style={[s.name, { color: theme.text }]}>{me.name}</Text>
-          <Text style={[s.handle, { color: theme.muted }]}>@{me.handle}</Text>
-          <Text style={[s.bio, { color: theme.subtext }]}>{me.bio}</Text>
-          <View style={[s.specialtyBadge, { backgroundColor: theme.accentSoft, borderColor: theme.accent + '33' }]}>
-            <Text style={{ fontSize: 13 }}>🍽</Text>
-            <Text style={{ fontSize: 12, color: theme.accent, fontWeight: '500' }}>{me.specialty}</Text>
-          </View>
+          <Text style={[s.name, { color: theme.text }]}>
+            {displayUser.name || 'Your Profile'}
+          </Text>
 
-          {/* Stats */}
+          <Text style={[s.handle, { color: theme.muted }]}>
+            @{displayUser.handle || 'username'}
+          </Text>
+
+          {!!displayUser.bio && (
+            <Text style={[s.bio, { color: theme.subtext }]}>
+              {displayUser.bio}
+            </Text>
+          )}
+
+          {!!displayUser.specialty && (
+            <View style={[s.specialtyBadge, { backgroundColor: theme.accentSoft, borderColor: theme.accent + '33' }]}>
+              <Text style={{ fontSize: 13 }}>🍽</Text>
+              <Text style={{ fontSize: 12, color: theme.accent, fontWeight: '500' }}>
+                {displayUser.specialty}
+              </Text>
+            </View>
+          )}
+
           <View style={[s.statsRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <StatCell value={me.recipeCount}               label="Recipes"   borderRight />
-            <StatCell value={me.followers.toLocaleString()} label="Followers" borderRight />
-            <StatCell value={me.following}                 label="Following" />
+            <StatCell value={recipeCount} label="Recipes" borderRight />
+            <StatCell value={followerCount.toLocaleString()} label="Followers" borderRight />
+            <StatCell value={followingCount} label="Following" />
           </View>
 
-          {/* Edit / Share */}
           <View style={s.actionRow}>
             <TouchableOpacity
               style={[s.editBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-              onPress={() => Alert.alert('Edit Profile', '🔌 Connect to backend: PUT /api/users/me with JWT token.')}
+              onPress={() => Alert.alert('Edit Profile', 'We will connect this to the edit profile form next.')}
             >
               <Text style={[s.editBtnText, { color: theme.text }]}>Edit Profile</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[s.editBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-              onPress={() => Alert.alert('Share Profile', 'Profile link:\nhttps://recipesocial.app/@alexcooks')}
+              onPress={logout}
             >
-              <Text style={[s.editBtnText, { color: theme.text }]}>↗ Share</Text>
+              <Text style={[s.editBtnText, { color: theme.text }]}>Log Out</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Content tabs */}
         <View style={[s.tabs, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          {[['recipes', '🍴 Recipes'], ['liked', '♥ Liked']].map(([id, label]) => (
+          {[
+            ['recipes', 'Recipes'],
+            ['liked', 'Liked'],
+            ['saved', 'Saved'],
+          ].map(([id, label]) => (
             <TouchableOpacity
               key={id}
               onPress={() => setActiveTab(id)}
-              style={[s.tabBtn, { backgroundColor: activeTab === id ? theme.accent : 'transparent' }]}
+              style={[
+                s.tabBtn,
+                { backgroundColor: activeTab === id ? theme.accent : 'transparent' },
+              ]}
             >
-              <Text style={{ color: activeTab === id ? '#fff' : theme.muted, fontWeight: '500', fontSize: 13 }}>
+              <Text
+                style={{
+                  color: activeTab === id ? '#fff' : theme.muted,
+                  fontWeight: '500',
+                  fontSize: 13,
+                }}
+              >
                 {label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Recipe list */}
         <View style={s.recipeList}>
-          {(activeTab === 'recipes' ? myRecipes : likedRecipes).map(r => {
-            const creator = CREATORS[r.creatorId];
+          {recipesToShow.map(recipe => {
+            const recipeId = recipe._id || recipe.id;
+
             return (
               <TouchableOpacity
-                key={r.id}
-                onPress={() => navigation.navigate('RecipeDetail', { recipe: r })}
+                key={recipeId}
+                onPress={() => openRecipe(recipe)}
                 style={[s.recipeCard, { backgroundColor: theme.card, borderColor: theme.border }]}
               >
-                <View style={[s.recipeHero, { backgroundColor: r.cardColor }]}>
-                  <View style={[StyleSheet.absoluteFillObject, { backgroundColor: r.accentColor + '44' }]} />
-                  <Text style={{ fontSize: 30 }}>{r.emoji}</Text>
+                <View style={[s.recipeHero, { backgroundColor: recipe.cardColor || '#1A1410' }]}>
+                  <View
+                    style={[
+                      StyleSheet.absoluteFillObject,
+                      { backgroundColor: (recipe.accentColor || theme.accent) + '44' },
+                    ]}
+                  />
+                  <Text style={{ fontSize: 30 }}>{recipe.emoji || '🍽'}</Text>
                 </View>
+
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.recipeTitle, { color: theme.text }]} numberOfLines={1}>{r.title}</Text>
-                  <Text style={[s.recipeMeta, { color: theme.muted }]}>{r.meal} · {r.cuisine}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 }}>
-                    <Stars rating={r.rating} size={11} />
+                  <Text style={[s.recipeTitle, { color: theme.text }]} numberOfLines={1}>
+                    {recipe.title}
+                  </Text>
+
+                  <Text style={[s.recipeMeta, { color: theme.muted }]} numberOfLines={1}>
+                    {[recipe.meal, recipe.cuisine].filter(Boolean).join(' · ') || 'Recipe'}
+                  </Text>
+
+                  <View style={s.recipeStats}>
+                    <Stars rating={recipe.rating || 0} size={11} />
                     <Text style={{ fontSize: 11, color: theme.muted }}>
-                      ♥ {r.likes.toLocaleString()}
+                      ♥ {(recipe.likes || 0).toLocaleString()}
                     </Text>
                   </View>
                 </View>
+
                 <Text style={{ color: theme.muted, fontSize: 18 }}>›</Text>
               </TouchableOpacity>
             );
           })}
-          {activeTab === 'liked' && likedRecipes.length === 0 && (
+
+          {recipesToShow.length === 0 && (
             <View style={s.emptyTab}>
-              <Text style={{ fontSize: 36, marginBottom: 10 }}>♡</Text>
-              <Text style={[s.emptyText, { color: theme.muted }]}>No liked recipes yet.</Text>
+              <Text style={{ fontSize: 36, marginBottom: 10 }}>
+                {activeTab === 'recipes' ? '🍳' : activeTab === 'liked' ? '♡' : '☆'}
+              </Text>
+              <Text style={[s.emptyText, { color: theme.muted }]}>
+                {activeTab === 'recipes'
+                  ? 'No recipes created yet.'
+                  : activeTab === 'liked'
+                    ? 'No liked recipes yet.'
+                    : 'No saved recipes yet.'}
+              </Text>
             </View>
           )}
         </View>
@@ -156,31 +256,110 @@ export default function ProfileScreen() {
 }
 
 const s = StyleSheet.create({
-  safe:            { flex: 1 },
-  scroll:          { paddingBottom: 44 },
-  cover:           { height: 160, position: 'relative' },
-  settingsBtn:     { position: 'absolute', top: 16, right: 60, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  notifBtn:        { position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  badge:           { position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  badgeText:       { color: '#fff', fontSize: 9, fontWeight: '700' },
+  safe: { flex: 1 },
+  scroll: { paddingBottom: 44 },
+  cover: { height: 160, position: 'relative' },
+
+  topIconBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+  },
+  topIconText: { fontSize: 18, color: '#fff' },
+
   avatarContainer: { paddingHorizontal: 16 },
-  avatarBorder:    { marginTop: -38, alignSelf: 'flex-start', borderWidth: 4, borderRadius: 42 },
-  infoSection:     { paddingHorizontal: 16, paddingTop: 10, gap: 10 },
-  name:            { fontSize: 22, fontWeight: '700' },
-  handle:          { fontSize: 14, marginTop: -6 },
-  bio:             { fontSize: 14, lineHeight: 22 },
-  specialtyBadge:  { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
-  statsRow:        { flexDirection: 'row', borderRadius: 16, overflow: 'hidden', borderWidth: 1 },
-  actionRow:       { flexDirection: 'row', gap: 10 },
-  editBtn:         { flex: 1, paddingVertical: 11, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
-  editBtnText:     { fontSize: 14, fontWeight: '500' },
-  tabs:            { flexDirection: 'row', margin: 16, borderRadius: 12, padding: 4, gap: 4, borderWidth: 1 },
-  tabBtn:          { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center' },
-  recipeList:      { paddingHorizontal: 16, gap: 10 },
-  recipeCard:      { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, gap: 12 },
-  recipeHero:      { width: 54, height: 54, borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  recipeTitle:     { fontSize: 15, fontWeight: '600', marginBottom: 2 },
-  recipeMeta:      { fontSize: 12 },
-  emptyTab:        { alignItems: 'center', paddingVertical: 40 },
-  emptyText:       { fontSize: 14 },
+  avatarBorder: {
+    marginTop: -38,
+    alignSelf: 'flex-start',
+    borderWidth: 4,
+    borderRadius: 42,
+  },
+
+  infoSection: { paddingHorizontal: 16, paddingTop: 10, gap: 10 },
+  name: { fontSize: 22, fontWeight: '700' },
+  handle: { fontSize: 14, marginTop: -6 },
+  bio: { fontSize: 14, lineHeight: 22 },
+
+  specialtyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+    borderWidth: 1,
+  },
+
+  statsRow: {
+    flexDirection: 'row',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+
+  actionRow: { flexDirection: 'row', gap: 10 },
+
+  editBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  editBtnText: { fontSize: 14, fontWeight: '500' },
+
+  tabs: {
+    flexDirection: 'row',
+    margin: 16,
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
+    borderWidth: 1,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 9,
+    alignItems: 'center',
+  },
+
+  recipeList: { paddingHorizontal: 16, gap: 10 },
+
+  recipeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+  },
+  recipeHero: {
+    width: 54,
+    height: 54,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+
+  recipeTitle: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
+  recipeMeta: { fontSize: 12 },
+  recipeStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 3,
+  },
+
+  emptyTab: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 14 },
 });

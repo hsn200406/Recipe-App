@@ -1,12 +1,17 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, StyleSheet,
-} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Avatar, Pill } from '../components/SharedComponents';
 import { useTheme } from '../context/ThemeContext';
-import { RECIPES, CREATORS, CUISINES, MEALS } from '../data/mockData';
-import { Avatar, Stars, MacroBar, Pill } from '../components/SharedComponents';
+import { CREATORS, CUISINES, MEALS, RECIPES } from '../data/mockData';
 
 export default function SearchScreen() {
   const { theme }  = useTheme();

@@ -102,23 +102,30 @@ export function AuthProvider({ children }) {
   // ── UI state helpers ─────────────────────────────────────────────────
 const toggleLike = async (recipeId) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/user/like/${recipeId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+        const res = await fetch(`${API_BASE_URL}/recipes/${recipeId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
     });
 
     if (!res.ok) throw new Error('Failed to like recipe');
 
-    const updatedLikes = await res.json();
+    const data = await res.json();
 
     // update local user state to match backend
-    setUser(prev => ({
-      ...prev,
-      likedRecipes: updatedLikes,
-    }));
+    setUser(prev => {
+      const updatedUser = {
+        ...prev,
+        likedRecipes: data.likedRecipes,
+      };
+
+      SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+
+    return data;
 
   } catch (err) {
     console.log('Like error:', err.message);
@@ -127,7 +134,7 @@ const toggleLike = async (recipeId) => {
 
 const toggleSave = async (recipeId) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/user/save/${recipeId}`, {
+    const res = await fetch(`${API_BASE_URL}/recipes/${recipeId}/save`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -137,11 +144,11 @@ const toggleSave = async (recipeId) => {
 
     if (!res.ok) throw new Error('Save failed');
 
-    const updatedSaved = await res.json();
+    const data = await res.json();
 
     setUser(prev => ({
       ...prev,
-      savedRecipes: updatedSaved,
+      savedRecipes: data.savedRecipes,
     }));
 
   } catch (err) {
@@ -149,18 +156,30 @@ const toggleSave = async (recipeId) => {
   }
 };
 
-  const toggleFollow = (creatorId) => {
-    setUser(prev => {
-      const following = prev.following.includes(creatorId);
-
-      return {
-        ...prev,
-        following: following
-          ? prev.following.filter(id => id !== creatorId)
-          : [...prev.following, creatorId],
-      };
+const toggleFollow = async (creatorId) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/user/follow/${creatorId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
     });
-  };
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Follow failed');
+    }
+
+    setUser(prev => ({
+      ...prev,
+      following: data.following || [],
+    }));
+  } catch (err) {
+    console.log('Follow error:', err.message);
+  }
+};
 
   return (
     <AuthContext.Provider

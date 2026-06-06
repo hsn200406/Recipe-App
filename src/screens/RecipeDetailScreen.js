@@ -1,5 +1,5 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -14,8 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, MacroBar, Stars } from '../components/SharedComponents';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { CREATORS } from '../data/mockData';
+import { reviewAPI } from '../services/api';
 
 // ── Share Modal ───────────────────────────────────────────────────────────────
 function ShareModal({ visible, recipe, onClose }) {
@@ -97,7 +99,7 @@ function ReviewModal({ visible, onClose, onSubmit }) {
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : height}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Overlay */}
         <TouchableOpacity
@@ -201,10 +203,13 @@ const rm = StyleSheet.create({
 export default function RecipeDetailScreen() {
   const { theme }  = useTheme();
   const navigation = useNavigation();
+  const { user, token, toggleLike, toggleSave, toggleFollow } = useAuth();
   const route      = useRoute();
-  const { recipe: initialRecipe, followedCreators = [], onToggleFollow } = route.params || {};
+  const { recipe: initialRecipe } = route.params || {};
+  const followedCreators = user?.following || [];
 
   const recipe = initialRecipe || {};
+  const recipeId = recipe._id || recipe.id;
   const safeRecipe = {
     ...recipe,
     ingredients: recipe?.ingredients || [],
@@ -213,24 +218,44 @@ export default function RecipeDetailScreen() {
   };
   const [tab, setTab]             = useState('ingredients');
   const [checked, setChecked]= useState([]);
-  const [liked, setLiked]         = useState(initialRecipe?.liked);
-  const [likeCount, setLikeCount] = useState(initialRecipe?.likes);
-  const [saved, setSaved]         = useState(initialRecipe?.saved);
+  const authLiked = user?.likedRecipes?.includes(recipeId);
+  const authSaved = user?.savedRecipes?.includes(recipeId);
+
+  const [liked, setLiked] = useState(initialRecipe?.isLiked ?? authLiked);
+  const [saved, setSaved] = useState(initialRecipe?.isSaved ?? authSaved);
+  const [likeCount, setLikeCount] = useState(initialRecipe?.likes || 0);
+
+  useEffect(() => {
+    setLiked(authLiked);
+  }, [authLiked]);
+
+  useEffect(() => {
+    setSaved(authSaved);
+  }, [authSaved]);
+
   const [reviews, setReviews]     = useState(initialRecipe?.reviews || []);
   const [comment, setComment]     = useState('');
   const [showShare, setShowShare] = useState(false);
   const [showReview, setShowReview] = useState(false);
 
-  if (!recipe) return null;
-  const creator = CREATORS?.[recipe.creatorId] || {
-    handle: 'unknown',
-    initial: '?',
-    avatarColor: '#999',
-    name: 'Unknown Creator',
-    specialty: '',
-    followers: 0
-  };
-  const isFollowed = followedCreators.includes(recipe.creatorId);
+  const creator = typeof recipe.creatorId === 'object'
+    ? recipe.creatorId
+    : CREATORS?.[recipe.creatorId] || {
+        handle: 'unknown',
+        initial: '?',
+        avatarColor: '#999',
+        name: 'Unknown Creator',
+        specialty: '',
+        followers: 0
+      };
+  const creatorId = creator._id || recipe.creatorId;
+  const authFollowed = followedCreators.includes(creatorId);
+  const [isFollowed, setIsFollowed] = useState(authFollowed);
+
+  useEffect(() => {
+    setIsFollowed(authFollowed);
+  }, [authFollowed]);
+
   const fmtCount   = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
 
   const toggleStep = i => setChecked(cs => cs.includes(i) ? cs.filter(x => x !== i) : [...cs, i]);
@@ -245,8 +270,17 @@ export default function RecipeDetailScreen() {
     <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
       <ShareModal  visible={showShare}  recipe={recipe} onClose={() => setShowShare(false)} />
       <ReviewModal visible={showReview} onClose={() => setShowReview(false)}
-        onSubmit={({ stars, comment: c }) => {
-          setReviews(r => [...r, { id: Date.now().toString(), user: 'you', initial: 'A', color: theme.accent, rating: stars, text: c, time: 'just now' }]);
+        onSubmit={async ({ stars, comment: c }) => {
+          try {
+            const data = await reviewAPI.add(token, recipeId, {
+              rating: stars,
+              text: c,
+            });
+
+            setReviews(data.reviews || []);
+          } catch (err) {
+            Alert.alert('Review failed', err.message);
+          }
         }}
       />
 
@@ -284,17 +318,20 @@ export default function RecipeDetailScreen() {
         {/* Creator card */}
         <TouchableOpacity
           style={[s.creatorCard, { backgroundColor: theme.card, borderColor: theme.border }]}
-          onPress={() => navigation.navigate('Creator', { creator, followedCreators, onToggleFollow })}
+          onPress={() => navigation.navigate('Creator', { creator })}
         >
-          <Avatar initial={creator.initial} color={creator.avatarColor} size={42} />
+          <Avatar initial={creator.initial || creator.name?.charAt(0) || '?'} color={creator.avatarColor} size={42} />
           <View style={{ flex: 1 }}>
             <Text style={[s.creatorName, { color: theme.text }]}>{creator.name}</Text>
             <Text style={[s.creatorMeta, { color: theme.muted }]}>
-              {creator.specialty} · {creator.followers.toLocaleString()} followers
+              {creator.specialty || 'Creator'} · {(creator.followers?.length || 0).toLocaleString()} followers
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => onToggleFollow && onToggleFollow(recipe.creatorId)}
+            onPress={async () => {
+              setIsFollowed(v => !v);
+              await toggleFollow(creatorId);
+            }}
             style={[s.followBtn, { backgroundColor: isFollowed ? theme.pillBg : theme.accent, borderColor: isFollowed ? theme.border : theme.accent }]}
           >
             <Text style={{ color: isFollowed ? theme.muted : '#fff', fontSize: 12, fontWeight: '600' }}>
@@ -304,14 +341,14 @@ export default function RecipeDetailScreen() {
         </TouchableOpacity>
 
         <Text style={[s.sectionTitle, { color: theme.muted, marginTop: 16 }]}>DESCRIPTION</Text>
-        <Text style={[s.desc, { color: theme.subtext, marginBottom: 16 }]}>{recipe.desc}</Text>
+        <Text style={[s.desc, { color: theme.subtext, marginBottom: 16 }]}>{recipe.description}</Text>
 
         {/* Nutrition card */}
         <View style={[s.nutritionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[s.sectionLabel, { color: theme.muted }]}>NUTRITION PER SERVING</Text>
           <View style={s.nutritionInner}>
             <View style={s.calBox}>
-              <Text style={[s.calNum, { color: theme.text }]}>{recipe.cal}</Text>
+              <Text style={[s.calNum, { color: theme.text }]}>{recipe.calories}</Text>
               <Text style={[s.calLabel, { color: theme.muted }]}>kcal</Text>
             </View>
             <View style={{ flex: 1, flexDirection: 'row', gap: 10 }}>
@@ -325,24 +362,63 @@ export default function RecipeDetailScreen() {
         {/* Action buttons */}
         <View style={s.actionGrid}>
           {[
-            { icon: liked ? '♥' : '♡', label: fmtCount(likeCount), color: theme.accent, active: liked,
-              onPress: () => { setLiked(l => !l); setLikeCount(c => liked ? c - 1 : c + 1); } },
-            { icon: saved ? '🔖' : '🏷', label: 'Save',   color: theme.gold,   active: saved,  onPress: () => setSaved(s => !s) },
+            {
+              icon: liked ? '♥' : '♡',
+              label: fmtCount(likeCount),
+              color: theme.accent,
+              active: liked,
+              onPress: async () => {
+                const nextLiked = !liked;
+
+                setLiked(nextLiked);
+                setLikeCount(c => nextLiked ? c + 1 : Math.max(0, c - 1));
+
+                const data = await toggleLike(recipeId);
+
+                if (data) {
+                  setLiked(data.likedRecipes.includes(recipeId));
+                  setLikeCount(data.likes);
+                }
+              }
+            },
+            {
+              icon: saved ? '★' : '☆',
+              label: 'Save',
+              color: theme.gold,
+              active: saved,
+              onPress: async () => {
+                setSaved(s => !s);
+                await toggleSave(recipeId);
+              }
+            },
             { icon: '💬',  label: 'Review', color: theme.muted,  active: false, onPress: () => setShowReview(true) },
             { icon: '↗',   label: 'Share',  color: theme.muted,  active: false, onPress: () => setShowShare(true) },
           ].map(btn => (
             <TouchableOpacity key={btn.label} onPress={btn.onPress}
               style={[s.actionBtn, { backgroundColor: btn.active ? btn.color + '18' : theme.card, borderColor: btn.active ? btn.color : theme.border }]}
             >
-              <Text style={{ fontSize: 20, color: btn.active ? btn.color : theme.muted }}>{btn.icon}</Text>
-              <Text style={{ fontSize: 11, color: btn.active ? btn.color : theme.muted, marginTop: 2 }}>{btn.label}</Text>
+              <Text style={{
+                fontSize: btn.label === 'Save' || btn.label === 'Review' || btn.label === 'Share' ? 22 : 28,
+                color: btn.active ? btn.color : theme.muted,
+                lineHeight: 30,
+              }}>
+                {btn.icon}
+              </Text>
+              <Text style={{
+                fontSize: 12,
+                fontWeight: '700',
+                color: btn.active ? btn.color : theme.muted,
+                marginTop: 2,
+              }}>
+                {btn.label}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Stats strip */}
         <View style={[s.statsStrip, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          {[['⏱', recipe.time], ['🔥', `${recipe.cal} cal`], ['💬', recipe.commentCount], ['↗', recipe.shares]].map(([icon, val], i) => (
+          {[['⏱', recipe.time], ['🔥', `${recipe.calories} cal`], ['💬', recipe.commentCount], ['↗', recipe.shares]].map(([icon, val], i) => (
             <View key={i} style={[s.statCell, { borderRightWidth: i < 3 ? 1 : 0, borderRightColor: theme.border }]}>
               <Text style={{ fontSize: 18 }}>{icon}</Text>
               <Text style={[s.statVal, { color: theme.muted }]}>{val}</Text>
@@ -409,9 +485,13 @@ export default function RecipeDetailScreen() {
         {tab === 'reviews' && (
           <View style={{ gap: 10 }}>
             {reviews.map(r => (
-              <View key={r.id} style={[s.reviewCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View key={r._id || r.id} style={[s.reviewCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={s.reviewHeader}>
-                  <Avatar initial={r.initial} color={r.color} size={28} />
+                  <Avatar
+                    initial={r.initial || r.user?.charAt(0)?.toUpperCase() || '?'}
+                    color={r.color || theme.accent}
+                    size={28}
+                  />
                   <Text style={[s.reviewUser, { color: theme.text }]}>@{r.user}</Text>
                   {r.rating > 0 && <Stars rating={r.rating} size={12} />}
                   <Text style={[s.reviewTime, { color: theme.muted }]}>{r.time}</Text>

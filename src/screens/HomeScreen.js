@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -14,7 +14,7 @@ import { Avatar } from '../components/SharedComponents';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 // import { RECIPES } from '../data/mockData'; // To test with moch data
-import { recipeAPI } from '../services/recipeAPI';
+import { recipeAPI } from '../services/api';
 
 // ── Home Screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -22,61 +22,66 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [feedTab, setFeedTab]             = useState('foryou');
-  const [followedCreators, setFollowed]   = useState(['sara']);
   const unreadNotifs = 3;
   const opacity = useRef(new Animated.Value(1)).current;
   const [animating, setAnimating] = useState(false);
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, token, toggleFollow } = useAuth();
+  const followedCreators = user?.following || [];
+  const followedKey = followedCreators.join(',');
   const goToRecipe = (recipe) => {
     navigation.navigate('RecipeDetail', { recipe });
   };
 
-  // const loadFeed = async () => {
-  //   try {
-  //     setLoading(true);
-
-  //     const token = "YOUR_TOKEN_HERE";
-
-  //     let data;
-
-  //     if (feedTab === 'following') {
-  //       data = await recipeAPI.getFollowing(token);
-  //     } else {
-  //       data = await recipeAPI.getFeed(token);
-  //     }
-
-  //     setFeed(data.recipes || data);
-
-  //   } catch (err) {
-  //     console.log("Feed error:", err.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   loadFeed();
-  // }, [feedTab]);
-
-  const loadFeed = async () => {
+  // Scoring in loadfeed and filtering only in render
+  const loadFeed = useCallback(async () => {
     try {
       setLoading(true);
 
-      const data = await recipeAPI.getFeed();
+      const data = await recipeAPI.getFeed(token);
 
-      setFeed(data);
+      const recipes = Array.isArray(data?.recipes)
+        ? data.recipes
+        : data || [];
+
+      const scored = recipes.map(r => {
+        let score = r.rating * 10 + Math.log((r.likes || 0) + 1) * 4;
+
+        const creatorId = typeof r.creatorId === 'object' ? r.creatorId._id : r.creatorId;
+
+        if (creatorId && followedCreators.includes(creatorId)) {
+          score += 50;
+        }
+
+        return { ...r, _score: score };
+      });
+
+      scored.sort((a, b) => b._score - a._score);
+
+      setFeed(scored);
     } catch (err) {
       console.log("Feed error:", err.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, followedKey]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadFeed();
+    }, [loadFeed])
+  );
 
   useEffect(() => {
-    loadFeed();
-  }, []);
+    const stackParent = navigation.getParent()?.getParent();
+
+    const unsubscribe = stackParent?.addListener('focus', () => {
+      loadFeed();
+    });
+
+    return unsubscribe;
+  }, [navigation, loadFeed]);
 
   useEffect(() => {
     setAnimating(true);
@@ -96,11 +101,13 @@ export default function HomeScreen() {
     ]).start(() => setAnimating(false));
   }, [feedTab]);
 
-  // Toggle handler for follow/unfollow creator by id
-  const toggleFollow = useCallback(id => {
-    setFollowed(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); // Checks if id is in followedCreators; if yes remove it, if not add it.
-  }, []);
+  const filteredFeed = feedTab === 'following'
+  ? feed.filter(r => {
+      const creatorId = typeof r.creatorId === 'object' ? r.creatorId._id : r.creatorId;
+      return creatorId && followedCreators.includes(creatorId);
+    })
+  : feed;
+
 
   // Recommendation algorithm — boost followed creators + rating + popularity (FOR MOCH DATA)
   // const scored = RECIPES.map(r => {
@@ -175,7 +182,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Feed */}
-          {feedTab === 'following' && feed.length === 0 ? (
+          {feedTab === 'following' && filteredFeed.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={{ fontSize: 44, marginBottom: 12 }}>👥</Text>
               <Text style={[styles.emptyText, { color: theme.muted }]}>
@@ -183,9 +190,9 @@ export default function HomeScreen() {
               </Text>
             </View>
           ) : (
-            feed.map(r => (
+            filteredFeed.map(r => (
               <RecipeCard
-                key={r._id}
+                key={r._id || r.id}
                 recipe={r}
                 followedCreators={followedCreators}
                 onToggleFollow={toggleFollow}

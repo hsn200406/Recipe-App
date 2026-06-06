@@ -72,10 +72,10 @@ export const uploadVideo = async (token, videoUri) => {
 
 // ── Users / Creators ──────────────────────────────────────────────────────────
 export const userAPI = {
-  getProfile:    (token, handle) => apiFetch(`/users/${handle}`, token),
-  updateProfile: (token, body)   => apiFetch('/users/me', token, { method: 'PUT', body: JSON.stringify(body) }),
-  follow:        (token, userId) => apiFetch(`/users/${userId}/follow`, token, { method: 'POST' }),
-  unfollow:      (token, userId) => apiFetch(`/users/${userId}/follow`, token, { method: 'DELETE' }),
+  getMe:         (token)         => apiFetch('/user/me', token),
+  getProfile:    (handle)        => apiFetch(`/user/${handle}`),
+  updateProfile: (token, body)   => apiFetch('/user/me', token, { method: 'PUT', body: JSON.stringify(body) }),
+  follow:        (token, userId) => apiFetch(`/user/follow/${userId}`, token, { method: 'POST' }),
 };
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
