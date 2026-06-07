@@ -1,6 +1,7 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -93,15 +94,28 @@ export default function SavedScreen() {
                 <View
                   style={[s.cardHero, { backgroundColor: recipe.cardColor }]}
                 >
-                  <View
-                    style={[
-                      s.cardGlow,
-                      { backgroundColor: recipe.accentColor + "55" },
-                    ]}
-                  />
-                  <Text style={{ fontSize: 36, zIndex: 1 }}>
-                    {recipe.emoji}
-                  </Text>
+                  {recipe.imageUrl ? (
+                    <Image
+                      source={{ uri: recipe.imageUrl }}
+                      style={s.cardImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <>
+                      <View
+                        style={[
+                          s.cardGlow,
+                          {
+                            backgroundColor:
+                              (recipe.accentColor || theme.accent) + "55",
+                          },
+                        ]}
+                      />
+                      <Text style={{ fontSize: 36, zIndex: 1 }}>
+                        {recipe.emoji || "🍽️"}
+                      </Text>
+                    </>
+                  )}
                 </View>
 
                 {/* Right: info */}
@@ -144,52 +158,41 @@ export default function SavedScreen() {
                     </Text>
                   </View>
 
-                  <View style={s.pillRow}>
-                    <View
-                      style={[
-                        s.pill,
-                        {
-                          backgroundColor: theme.accentSoft,
-                          borderColor: theme.accent + "33",
-                        },
-                      ]}
-                    >
-                      <Text style={{ fontSize: 10, color: theme.accent }}>
-                        {recipe.meal}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        s.pill,
-                        {
-                          backgroundColor: theme.pillBg,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={{ fontSize: 10, color: theme.pillText }}>
-                        {recipe.cuisine}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        s.pill,
-                        {
-                          backgroundColor: theme.pillBg,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={{ fontSize: 10, color: theme.pillText }}>
-                        ⏱ {recipe.time}
-                      </Text>
-                    </View>
-                  </View>
+                  {[
+                    recipe.meal,
+                    recipe.cuisine,
+                    recipe.time && `⏱ ${recipe.time}`,
+                  ]
+                    .filter(Boolean)
+                    .map((label, index) => (
+                      <View
+                        key={label}
+                        style={[
+                          s.pill,
+                          {
+                            backgroundColor:
+                              index === 0 ? theme.accentSoft : theme.pillBg,
+                            borderColor:
+                              index === 0 ? theme.accent + "33" : theme.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            color: index === 0 ? theme.accent : theme.pillText,
+                          }}
+                        >
+                          {label}
+                        </Text>
+                      </View>
+                    ))}
 
                   <View style={s.statsRow}>
                     <Stars rating={recipe.rating} size={11} />
                     <Text style={[s.statsText, { color: theme.muted }]}>
-                      {recipe.rating} · {recipe.calories} kcal
+                      {recipe.rating || 0} ·{" "}
+                      {recipe.calories ? `${recipe.calories} kcal` : "N/A"}
                     </Text>
                   </View>
                 </View>
@@ -232,10 +235,24 @@ const s = StyleSheet.create({
   card: {
     flexDirection: "row",
     borderRadius: 16,
-    overflow: "hidden",
     borderWidth: 1,
+    minHeight: 106,
+    overflow: "hidden",
   },
-  cardHero: { width: 100, alignItems: "center", justifyContent: "center" },
+
+  cardHero: {
+    width: 88,
+    height: 106,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+  },
+
+  cardImage: {
+    width: 88,
+    height: 106,
+  },
   cardGlow: { ...StyleSheet.absoluteFillObject },
   cardInfo: { flex: 1, padding: 12, gap: 6 },
   cardTop: {
