@@ -85,7 +85,7 @@ export default function SettingsScreen() {
           </View>
           <TouchableOpacity
             style={[s.editProfileBtn, { borderColor: theme.border }]}
-            onPress={() => Alert.alert('Edit Profile', '🔌 Connect to backend: PUT /api/users/me')}
+            onPress={() => navigation.navigate('EditProfile')}
           >
             <Text style={[s.editProfileText, { color: theme.text }]}>Edit</Text>
           </TouchableOpacity>
@@ -101,7 +101,7 @@ export default function SettingsScreen() {
 
         {/* Account */}
         <SettingsSection title="ACCOUNT">
-          <SettingsRow icon="👤" label="Edit Profile"       right={chevron} onPress={() => Alert.alert('Edit Profile', '🔌 PUT /api/users/me')} />
+          <SettingsRow icon="👤" label="Edit Profile" right={chevron} onPress={() => navigation.navigate('EditProfile')} />
           <SettingsRow icon="🔒" label="Change Password"    right={chevron} onPress={() => Alert.alert('Change Password', '🔌 PUT /api/auth/password')} />
           <SettingsRow icon="🔗" label="Connected Accounts" right={chevron} onPress={() => Alert.alert('Connected Accounts', 'Google, Apple Sign-In support via Expo AuthSession.')} last />
         </SettingsSection>

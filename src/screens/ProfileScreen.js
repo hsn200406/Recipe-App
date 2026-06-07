@@ -1,12 +1,11 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Stars, StatCell } from '../components/SharedComponents';
@@ -152,7 +151,7 @@ export default function ProfileScreen() {
           <View style={s.actionRow}>
             <TouchableOpacity
               style={[s.editBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-              onPress={() => Alert.alert('Edit Profile', 'We will connect this to the edit profile form next.')}
+              onPress={() => navigation.navigate('EditProfile')}
             >
               <Text style={[s.editBtnText, { color: theme.text }]}>Edit Profile</Text>
             </TouchableOpacity>

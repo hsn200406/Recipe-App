@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const auth = require('../middleware/auth');
-const Recipe = require('../models/Recipe');
-const User = require('../models/User');
+const auth = require("../middleware/auth");
+const Recipe = require("../models/Recipe");
+const User = require("../models/User");
 
 // Routes:
 // GET    /api/recipes              Public recipe feed
@@ -21,14 +21,14 @@ const User = require('../models/User');
 // DELETE /api/recipes/:id          Delete my recipe
 // GET    /api/recipes/:id          Get public recipe by id
 
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   const recipes = await Recipe.find({ isPublic: true })
-    .populate('creatorId', 'name handle avatarColor specialty')
+    .populate("creatorId", "name handle avatarColor specialty")
     .sort({ createdAt: -1 });
   res.json(recipes);
 });
 
-router.post('/', auth, async (req, res) => {
+router.post("/", auth, async (req, res) => {
   try {
     const {
       title,
@@ -48,34 +48,34 @@ router.post('/', auth, async (req, res) => {
       isPublic,
       emoji,
       cardColor,
-      accentColor
-      } = req.body;
+      accentColor,
+    } = req.body;
 
     if (!title) {
-      return res.status(400).json({ message: 'Recipe Title is required' });
+      return res.status(400).json({ message: "Recipe Title is required" });
     }
 
     if (ingredients !== undefined && !Array.isArray(ingredients)) {
-      return res.status(400).json({ message: 'Ingredients must be an array' });
+      return res.status(400).json({ message: "Ingredients must be an array" });
     }
 
     if (steps !== undefined && !Array.isArray(steps)) {
-      return res.status(400).json({ message: 'Steps must be an array' });
+      return res.status(400).json({ message: "Steps must be an array" });
     }
 
     if (tags !== undefined && !Array.isArray(tags)) {
-      return res.status(400).json({ message: 'Tags must be an array' });
+      return res.status(400).json({ message: "Tags must be an array" });
     }
 
     const recipe = await Recipe.create({
       title,
       description,
-      imageUrl: imageUrl ?? '',
-      videoUrl: videoUrl ?? '',
+      imageUrl: imageUrl ?? "",
+      videoUrl: videoUrl ?? "",
       hasVideo: Boolean(videoUrl),
-      cuisine: cuisine ?? '',
-      meal: meal ?? '',
-      time: time ?? '',
+      cuisine: cuisine ?? "",
+      meal: meal ?? "",
+      time: time ?? "",
       calories: calories ?? 0,
       protein: protein ?? 0,
       carbs: carbs ?? 0,
@@ -84,23 +84,22 @@ router.post('/', auth, async (req, res) => {
       steps: steps ?? [],
       tags: tags ?? [],
       isPublic: isPublic ?? true,
-      emoji: emoji ?? '🍽️',
-      cardColor: cardColor ?? '#1A1410',
-      accentColor: accentColor ?? '#FF5C3A',
+      emoji: emoji ?? "🍽️",
+      cardColor: cardColor ?? "#1A1410",
+      accentColor: accentColor ?? "#FF5C3A",
       creatorId: req.userId,
     });
 
     res.status(201).json(recipe);
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.get('/me', auth, async (req, res) => {
+router.get("/me", auth, async (req, res) => {
   try {
     const recipes = await Recipe.find({ creatorId: req.userId })
-      .populate('creatorId', 'name handle avatarColor specialty')
+      .populate("creatorId", "name handle avatarColor specialty")
       .sort({ createdAt: -1 });
 
     res.json(recipes);
@@ -109,18 +108,18 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-router.get('/user/:userId', async (req, res) => {
+router.get("/user/:userId", async (req, res) => {
   try {
     if (!req.params.userId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
+      return res.status(400).json({ message: "Invalid user ID" });
     }
 
     const recipes = await Recipe.find({
       creatorId: req.params.userId,
-      isPublic: true
+      isPublic: true,
     })
-    .populate('creatorId', 'name handle avatarColor specialty')
-    .sort({ createdAt: -1 });
+      .populate("creatorId", "name handle avatarColor specialty")
+      .sort({ createdAt: -1 });
 
     res.json(recipes);
   } catch (err) {
@@ -128,56 +127,63 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid recipe ID' });
+      return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
     const recipe = await Recipe.findById(req.params.id);
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     if (recipe.creatorId.toString() !== req.userId) {
-      return res.status(403).json({ message: 'You can only delete your own recipes' });
+      return res
+        .status(403)
+        .json({ message: "You can only delete your own recipes" });
     }
 
     await recipe.deleteOne();
 
-    res.json({ message: 'Recipe deleted' });
+    res.json({ message: "Recipe deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.put('/:id', auth, async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid recipe ID' });
+      return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
     const recipe = await Recipe.findById(req.params.id);
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     if (recipe.creatorId.toString() !== req.userId) {
-      return res.status(403).json({ message: 'You can only edit your own recipes' });
+      return res
+        .status(403)
+        .json({ message: "You can only edit your own recipes" });
     }
 
-    if (req.body.ingredients !== undefined && !Array.isArray(req.body.ingredients)) {
-      return res.status(400).json({ message: 'Ingredients must be an array' });
+    if (
+      req.body.ingredients !== undefined &&
+      !Array.isArray(req.body.ingredients)
+    ) {
+      return res.status(400).json({ message: "Ingredients must be an array" });
     }
 
     if (req.body.steps !== undefined && !Array.isArray(req.body.steps)) {
-      return res.status(400).json({ message: 'Steps must be an array' });
+      return res.status(400).json({ message: "Steps must be an array" });
     }
 
     if (req.body.tags !== undefined && !Array.isArray(req.body.tags)) {
-      return res.status(400).json({ message: 'Tags must be an array' });
+      return res.status(400).json({ message: "Tags must be an array" });
     }
 
     const {
@@ -198,7 +204,7 @@ router.put('/:id', auth, async (req, res) => {
       isPublic,
       emoji,
       cardColor,
-      accentColor
+      accentColor,
     } = req.body;
 
     const updates = {};
@@ -226,14 +232,14 @@ router.put('/:id', auth, async (req, res) => {
     if (accentColor !== undefined) updates.accentColor = accentColor;
 
     if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ message: 'No recipe fields provided' });
+      return res.status(400).json({ message: "No recipe fields provided" });
     }
 
     const updatedRecipe = await Recipe.findByIdAndUpdate(
       req.params.id,
       updates,
-      { new: true, runValidators: true }
-    ).populate('creatorId', 'name handle avatarColor specialty');
+      { new: true, runValidators: true },
+    ).populate("creatorId", "name handle avatarColor specialty");
 
     res.json(updatedRecipe);
   } catch (err) {
@@ -241,28 +247,28 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-router.post('/:id/like', auth, async (req, res) => {
+router.post("/:id/like", auth, async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid recipe ID' });
+      return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
     const recipe = await Recipe.findById(req.params.id);
     const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'Current user not found' });
+      return res.status(404).json({ message: "Current user not found" });
     }
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     const recipeId = req.params.id;
     const alreadyLiked = user.likedRecipes.includes(recipeId);
 
     if (alreadyLiked) {
-      user.likedRecipes = user.likedRecipes.filter(id => id !== recipeId);
+      user.likedRecipes = user.likedRecipes.filter((id) => id !== recipeId);
       recipe.likes = Math.max(0, recipe.likes - 1);
     } else {
       user.likedRecipes.push(recipeId);
@@ -274,35 +280,35 @@ router.post('/:id/like', auth, async (req, res) => {
 
     res.json({
       likedRecipes: user.likedRecipes,
-      likes: recipe.likes
+      likes: recipe.likes,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.post('/:id/save', auth, async (req, res) => {
+router.post("/:id/save", auth, async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid recipe ID' });
+      return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
     const recipe = await Recipe.findById(req.params.id);
     const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'Current user not found' });
+      return res.status(404).json({ message: "Current user not found" });
     }
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     const recipeId = req.params.id;
     const alreadySaved = user.savedRecipes.includes(recipeId);
 
     if (alreadySaved) {
-      user.savedRecipes = user.savedRecipes.filter(id => id !== recipeId);
+      user.savedRecipes = user.savedRecipes.filter((id) => id !== recipeId);
       recipe.saves = Math.max(0, recipe.saves - 1);
     } else {
       user.savedRecipes.push(recipeId);
@@ -314,47 +320,52 @@ router.post('/:id/save', auth, async (req, res) => {
 
     res.json({
       savedRecipes: user.savedRecipes,
-      saves: recipe.saves
+      saves: recipe.saves,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.post('/:id/reviews', auth, async (req, res) => {
+router.post("/:id/reviews", auth, async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid recipe ID' });
+      return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
     const { rating, text } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5" });
     }
 
     const recipe = await Recipe.findById(req.params.id);
     const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'Current user not found' });
+      return res.status(404).json({ message: "Current user not found" });
     }
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     recipe.reviews.push({
       userId: user._id,
       user: user.handle,
       rating,
-      text: text ?? ''
+      text: text ?? "",
     });
 
     recipe.ratingCount = recipe.reviews.length;
     recipe.commentCount = recipe.reviews.length;
 
-    const totalRating = recipe.reviews.reduce((sum, review) => sum + review.rating, 0);
+    const totalRating = recipe.reviews.reduce(
+      (sum, review) => sum + review.rating,
+      0,
+    );
     recipe.rating = totalRating / recipe.ratingCount;
 
     await recipe.save();
@@ -363,26 +374,26 @@ router.post('/:id/reviews', auth, async (req, res) => {
       reviews: recipe.reviews,
       rating: recipe.rating,
       ratingCount: recipe.ratingCount,
-      commentCount: recipe.commentCount
+      commentCount: recipe.commentCount,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.get('/saved', auth, async (req, res) => {
+router.get("/saved", auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'Current user not found' });
+      return res.status(404).json({ message: "Current user not found" });
     }
 
     const recipes = await Recipe.find({
       _id: { $in: user.savedRecipes },
-      isPublic: true
+      isPublic: true,
     })
-      .populate('creatorId', 'name handle avatarColor specialty')
+      .populate("creatorId", "name handle avatarColor specialty")
       .sort({ createdAt: -1 });
 
     res.json(recipes);
@@ -391,19 +402,19 @@ router.get('/saved', auth, async (req, res) => {
   }
 });
 
-router.get('/following', auth, async (req, res) => {
+router.get("/following", auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'Current user not found' });
+      return res.status(404).json({ message: "Current user not found" });
     }
 
     const recipes = await Recipe.find({
       creatorId: { $in: user.following },
-      isPublic: true
+      isPublic: true,
     })
-      .populate('creatorId', 'name handle avatarColor specialty')
+      .populate("creatorId", "name handle avatarColor specialty")
       .sort({ createdAt: -1 });
 
     res.json(recipes);
@@ -412,7 +423,7 @@ router.get('/following', auth, async (req, res) => {
   }
 });
 
-router.get('/search', async (req, res) => {
+router.get("/search", async (req, res) => {
   try {
     const { q, cuisine, meal, protein, carbs, fat } = req.query;
 
@@ -420,33 +431,33 @@ router.get('/search', async (req, res) => {
 
     if (q) {
       filter.$or = [
-        { title: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-        { cuisine: { $regex: q, $options: 'i' } },
-        { meal: { $regex: q, $options: 'i' } },
-        { tags: { $regex: q, $options: 'i' } }
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+        { cuisine: { $regex: q, $options: "i" } },
+        { meal: { $regex: q, $options: "i" } },
+        { tags: { $regex: q, $options: "i" } },
       ];
     }
 
-    if (cuisine && cuisine !== 'All') {
+    if (cuisine && cuisine !== "All") {
       filter.cuisine = cuisine;
     }
 
-    if (meal && meal !== 'All') {
+    if (meal && meal !== "All") {
       filter.meal = meal;
     }
 
-    if (protein === 'High') filter.protein = { $gte: 30 };
-    if (protein === 'Low') filter.protein = { $lte: 15 };
+    if (protein === "High") filter.protein = { $gte: 30 };
+    if (protein === "Low") filter.protein = { $lte: 15 };
 
-    if (carbs === 'High') filter.carbs = { $gte: 60 };
-    if (carbs === 'Low') filter.carbs = { $lte: 30 };
+    if (carbs === "High") filter.carbs = { $gte: 60 };
+    if (carbs === "Low") filter.carbs = { $lte: 30 };
 
-    if (fat === 'High') filter.fat = { $gte: 25 };
-    if (fat === 'Low') filter.fat = { $lte: 10 };
+    if (fat === "High") filter.fat = { $gte: 25 };
+    if (fat === "Low") filter.fat = { $lte: 10 };
 
     const recipes = await Recipe.find(filter)
-      .populate('creatorId', 'name handle avatarColor specialty')
+      .populate("creatorId", "name handle avatarColor specialty")
       .sort({ rating: -1, likes: -1, createdAt: -1 });
 
     res.json(recipes);
@@ -455,23 +466,23 @@ router.get('/search', async (req, res) => {
   }
 });
 
-router.get('/test-auth', auth, (req, res) => {
+router.get("/test-auth", auth, (req, res) => {
   res.json({
     message: "You are authenticated 🎉",
-    userId: req.userId
+    userId: req.userId,
   });
 });
 
-router.post('/:id/share', auth, async (req, res) => {
+router.post("/:id/share", auth, async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid recipe ID' });
+      return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
     const recipe = await Recipe.findById(req.params.id);
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     recipe.shares += 1;
@@ -479,28 +490,30 @@ router.post('/:id/share', auth, async (req, res) => {
     await recipe.save();
 
     res.json({
-      shares: recipe.shares
+      shares: recipe.shares,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid recipe ID' });
+      return res.status(400).json({ message: "Invalid recipe ID" });
     }
 
-    const recipe = await Recipe.findById(req.params.id)
-      .populate('creatorId', 'name handle avatarColor specialty');
+    const recipe = await Recipe.findById(req.params.id).populate(
+      "creatorId",
+      "name handle avatarColor specialty",
+    );
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     if (!recipe.isPublic) {
-      return res.status(403).json({ message: 'This recipe is private' });
+      return res.status(403).json({ message: "This recipe is private" });
     }
 
     res.json(recipe);

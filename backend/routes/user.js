@@ -1,16 +1,16 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Recipe = require('../models/Recipe');
+const auth = require("../middleware/auth");
+const User = require("../models/User");
+const Recipe = require("../models/Recipe");
 
-router.get('/me', auth, async (req, res) => {
+router.get("/me", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
+    const user = await User.findById(req.userId).select("-password");
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.json(user);
@@ -19,19 +19,19 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-router.put('/me', auth, async (req, res) => {
+router.put("/me", auth, async (req, res) => {
   try {
     const { name, handle, bio, avatarColor, specialty } = req.body;
 
     if (handle) {
-        const existing = await User.findOne({
-            handle: handle.toLowerCase(),
-            _id: { $ne: req.userId }
-        });
+      const existing = await User.findOne({
+        handle: handle.toLowerCase(),
+        _id: { $ne: req.userId },
+      });
 
-        if (existing) {
-            return res.status(400).json({ message: 'Handle already exists' });
-        }
+      if (existing) {
+        return res.status(400).json({ message: "Handle already exists" });
+      }
     }
 
     const updates = {};
@@ -43,14 +43,13 @@ router.put('/me', auth, async (req, res) => {
     if (specialty !== undefined) updates.specialty = specialty;
 
     if (Object.keys(updates).length === 0) {
-        return res.status(400).json({ message: 'No profile fields provided' });
+      return res.status(400).json({ message: "No profile fields provided" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.userId,
-      updates,
-      { new: true, runValidators: true }
-    ).select('-password');
+    const updatedUser = await User.findByIdAndUpdate(req.userId, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
 
     res.json(updatedUser);
   } catch (err) {
@@ -59,31 +58,31 @@ router.put('/me', auth, async (req, res) => {
 });
 
 // LIKE recipe
-router.post('/like/:id', auth, async (req, res) => {
+router.post("/like/:id", auth, async (req, res) => {
   const user = await User.findById(req.userId);
 
   if (!user) {
-        return res.status(404).json({ message: 'Current user not found' });
-    }
+    return res.status(404).json({ message: "Current user not found" });
+  }
 
   const recipeId = req.params.id;
 
   const recipe = await Recipe.findById(recipeId);
 
   if (!recipe) {
-    return res.status(404).json({ message: 'Recipe not found' });
+    return res.status(404).json({ message: "Recipe not found" });
   }
 
   const alreadyLiked = user.likedRecipes.includes(recipeId);
 
-    if (alreadyLiked) {
-    user.likedRecipes = user.likedRecipes.filter(id => id !== recipeId);
+  if (alreadyLiked) {
+    user.likedRecipes = user.likedRecipes.filter((id) => id !== recipeId);
     recipe.likes = Math.max(0, recipe.likes - 1);
-    } else {
+  } else {
     user.likedRecipes.push(recipeId);
     recipe.likes += 1;
-    }
-    
+  }
+
   await user.save();
   res.json(user.likedRecipes);
 });
@@ -91,12 +90,12 @@ router.post('/like/:id', auth, async (req, res) => {
 // ─────────────────────────────
 // 🔖 SAVE / UNSAVE RECIPE
 // ─────────────────────────────
-router.post('/save/:recipeId', auth, async (req, res) => {
+router.post("/save/:recipeId", auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 
     if (!user) {
-        return res.status(404).json({ message: 'Current user not found' });
+      return res.status(404).json({ message: "Current user not found" });
     }
 
     const recipeId = req.params.recipeId;
@@ -104,36 +103,36 @@ router.post('/save/:recipeId', auth, async (req, res) => {
     const recipe = await Recipe.findById(recipeId);
 
     if (!recipe) {
-        return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ message: "Recipe not found" });
     }
 
     const isSaved = user.savedRecipes.includes(recipeId);
 
     if (isSaved) {
-    user.savedRecipes = user.savedRecipes.filter(id => id !== recipeId);
-    recipe.saves = Math.max(0, recipe.saves - 1);
+      user.savedRecipes = user.savedRecipes.filter((id) => id !== recipeId);
+      recipe.saves = Math.max(0, recipe.saves - 1);
     } else {
-    user.savedRecipes.push(recipeId);
-    recipe.saves += 1;
+      user.savedRecipes.push(recipeId);
+      recipe.saves += 1;
     }
 
     await user.save();
     await recipe.save();
 
     res.json(user.savedRecipes);
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.get('/:handle', async (req, res) => {
+router.get("/:handle", async (req, res) => {
   try {
-    const user = await User.findOne({ handle: req.params.handle.toLowerCase() })
-      .select('-password -email');
+    const user = await User.findOne({
+      handle: req.params.handle.toLowerCase(),
+    }).select("-password -email");
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.json(user);
@@ -143,30 +142,30 @@ router.get('/:handle', async (req, res) => {
 });
 
 // FOLLOW / UNFOLLOW USER
-router.post('/follow/:creatorId', auth, async (req, res) => {
+router.post("/follow/:creatorId", auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     const creatorId = req.params.creatorId;
 
     if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     if (creatorId === req.userId) {
-        return res.status(400).json({ message: 'You cannot follow yourself' });
+      return res.status(400).json({ message: "You cannot follow yourself" });
     }
 
     const creator = await User.findById(creatorId);
 
     if (!creator) {
-    return res.status(404).json({ message: 'User to follow not found' });
+      return res.status(404).json({ message: "User to follow not found" });
     }
 
     const alreadyFollowing = user.following.includes(creatorId);
 
     if (alreadyFollowing) {
-      user.following = user.following.filter(id => id !== creatorId);
-      creator.followers = creator.followers.filter(id => id !== req.userId);
+      user.following = user.following.filter((id) => id !== creatorId);
+      creator.followers = creator.followers.filter((id) => id !== req.userId);
     } else {
       user.following.push(creatorId);
       creator.followers.push(req.userId);
@@ -176,9 +175,8 @@ router.post('/follow/:creatorId', auth, async (req, res) => {
     await creator.save();
 
     res.json({
-      following: user.following
+      following: user.following,
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

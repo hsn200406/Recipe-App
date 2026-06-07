@@ -1,15 +1,15 @@
-import * as SecureStore from 'expo-secure-store';
-import { createContext, useContext, useEffect, useState } from 'react';
+import * as SecureStore from "expo-secure-store";
+import { createContext, useContext, useEffect, useState } from "react";
 
 // 🔌 Replace with your backend URL
-export const API_BASE_URL = 'http://192.168.0.103:5000/api';
+export const API_BASE_URL = "http://192.168.0.103:5000/api";
 
 const AuthContext = createContext(null);
 
 const defaultUser = {
   id: null,
-  name: '',
-  email: '',
+  name: "",
+  email: "",
   likedRecipes: [],
   savedRecipes: [],
   following: [],
@@ -24,8 +24,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const storedToken = await SecureStore.getItemAsync('jwt');
-        const storedUser = await SecureStore.getItemAsync('user');
+        const storedToken = await SecureStore.getItemAsync("jwt");
+        const storedUser = await SecureStore.getItemAsync("user");
 
         if (storedToken && storedUser) {
           const parsed = JSON.parse(storedUser);
@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
           });
         }
       } catch (err) {
-        console.log('Auth restore error:', err);
+        console.log("Auth restore error:", err);
       } finally {
         setLoading(false);
       }
@@ -49,8 +49,8 @@ export function AuthProvider({ children }) {
 
   // ── Helpers ──────────────────────────────────────────────────────────
   const _save = async (tok, usr) => {
-    await SecureStore.setItemAsync('jwt', tok);
-    await SecureStore.setItemAsync('user', JSON.stringify(usr));
+    await SecureStore.setItemAsync("jwt", tok);
+    await SecureStore.setItemAsync("user", JSON.stringify(usr));
 
     setToken(tok);
     setUser({
@@ -63,8 +63,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await SecureStore.deleteItemAsync('jwt');
-    await SecureStore.deleteItemAsync('user');
+    await SecureStore.deleteItemAsync("jwt");
+    await SecureStore.deleteItemAsync("user");
 
     setToken(null);
     setUser(defaultUser);
@@ -73,13 +73,13 @@ export function AuthProvider({ children }) {
   // ── Auth calls ───────────────────────────────────────────────────────
   const login = async (email, password) => {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Login failed');
+    if (!res.ok) throw new Error(data.message || "Login failed");
 
     await _save(data.token, data.user);
     return data;
@@ -87,99 +87,109 @@ export function AuthProvider({ children }) {
 
   const register = async (name, handle, email, password) => {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, handle, email, password }),
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Registration failed');
+    if (!res.ok) throw new Error(data.message || "Registration failed");
 
     await _save(data.token, data.user);
     return data;
   };
 
   // ── UI state helpers ─────────────────────────────────────────────────
-const toggleLike = async (recipeId) => {
-  try {
-        const res = await fetch(`${API_BASE_URL}/recipes/${recipeId}/like`, {
-        method: 'POST',
+  const toggleLike = async (recipeId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/recipes/${recipeId}/like`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-    });
+      });
 
-    if (!res.ok) throw new Error('Failed to like recipe');
+      if (!res.ok) throw new Error("Failed to like recipe");
 
-    const data = await res.json();
+      const data = await res.json();
 
-    // update local user state to match backend
-    setUser(prev => {
-      const updatedUser = {
-        ...prev,
-        likedRecipes: data.likedRecipes,
-      };
+      // update local user state to match backend
+      setUser((prev) => {
+        const updatedUser = {
+          ...prev,
+          likedRecipes: data.likedRecipes,
+        };
 
-      SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
-      return updatedUser;
-    });
+        SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
 
-    return data;
-
-  } catch (err) {
-    console.log('Like error:', err.message);
-  }
-};
-
-const toggleSave = async (recipeId) => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/recipes/${recipeId}/save`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) throw new Error('Save failed');
-
-    const data = await res.json();
-
-    setUser(prev => ({
-      ...prev,
-      savedRecipes: data.savedRecipes,
-    }));
-
-  } catch (err) {
-    console.log(err.message);
-  }
-};
-
-const toggleFollow = async (creatorId) => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/user/follow/${creatorId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || 'Follow failed');
+      return data;
+    } catch (err) {
+      console.log("Like error:", err.message);
     }
+  };
 
-    setUser(prev => ({
-      ...prev,
-      following: data.following || [],
-    }));
-  } catch (err) {
-    console.log('Follow error:', err.message);
-  }
-};
+  const toggleSave = async (recipeId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/recipes/${recipeId}/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Save failed");
+
+      const data = await res.json();
+
+      setUser((prev) => ({
+        ...prev,
+        savedRecipes: data.savedRecipes,
+      }));
+    } catch (err) {
+      console.log(err.message);
+    }
+  };
+
+  const toggleFollow = async (creatorId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/follow/${creatorId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Follow failed");
+      }
+
+      setUser((prev) => ({
+        ...prev,
+        following: data.following || [],
+      }));
+    } catch (err) {
+      console.log("Follow error:", err.message);
+    }
+  };
+
+  const updateCurrentUser = async (updatedUser) => {
+    await SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+
+    setUser({
+      ...defaultUser,
+      ...updatedUser,
+      likedRecipes: updatedUser.likedRecipes || [],
+      savedRecipes: updatedUser.savedRecipes || [],
+      following: updatedUser.following || [],
+    });
+  };
 
   return (
     <AuthContext.Provider
@@ -193,6 +203,7 @@ const toggleFollow = async (creatorId) => {
         toggleLike,
         toggleSave,
         toggleFollow,
+        updateCurrentUser,
       }}
     >
       {children}

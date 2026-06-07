@@ -1,13 +1,21 @@
-import React, { useState, useRef } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Modal, StyleSheet,
-  Alert, ActivityIndicator, Platform,
-} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRef, useState } from 'react';
+import {
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pill, Toggle } from '../components/SharedComponents';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { CUISINES, MEALS } from '../data/mockData';
-import { Pill, Toggle } from '../components/SharedComponents';
+import { recipeAPI } from '../services/api';
 
 // ── AI Capture Modal ──────────────────────────────────────────────────────────
 function AICaptureModal({ visible, onClose }) {
@@ -153,11 +161,13 @@ const ac = StyleSheet.create({
 export default function CreateScreen() {
   const { theme } = useTheme();
 
+  const { token } = useAuth();
+  const [publishing, setPublishing] = useState(false);
   const [step, setStep]           = useState(1);   // 1=details 2=ingredients 3=steps 4=publish
   const [title, setTitle]         = useState('');
   const [desc, setDesc]           = useState('');
-  const [meal, setMeal]           = useState('Lunch');
-  const [cuisine, setCuisine]     = useState('Japanese');
+  const [meal, setMeal]           = useState('');
+  const [cuisine, setCuisine]     = useState('');
   const [isPublic, setIsPublic]   = useState(true);
   const [videoFile, setVideoFile] = useState(null);
   const [ingredients, setIngredients] = useState([
@@ -187,11 +197,46 @@ export default function CreateScreen() {
     const arr = [...steps]; arr[i] = val; setSteps(arr);
   };
 
-  const publish = () => {
-    Alert.alert('Recipe Published! 🎉',
-      '🔌 To save to a real backend:\n\nPOST /api/recipes with JWT auth header.\n\nFields: title, desc, meal, cuisine, isPublic, videoUrl, ingredients, steps\n\nSee src/services/api.js → recipeAPI.create()',
-      [{ text: 'Got it', style: 'default' }]
-    );
+  // 🔌 API NOTE: publish() calls recipeAPI.create() with all the recipe details to save to backend
+  const publish = async () => {
+    if (!title.trim()) {
+      Alert.alert('Title required', 'Please enter a recipe title.');
+      return;
+    }
+
+    try {
+      setPublishing(true);
+
+      const cleanIngredients = ingredients.filter(i => i.name.trim());
+      const cleanSteps = steps.filter(s => s.trim());
+
+      await recipeAPI.create(token, {
+        title: title.trim(),
+        description: desc.trim(),
+        meal,
+        cuisine,
+        isPublic,
+        ingredients: cleanIngredients,
+        steps: cleanSteps,
+        hasVideo: Boolean(videoFile),
+      });
+
+      Alert.alert('Recipe Published!', 'Your recipe was saved successfully.');
+
+      setStep(1);
+      setTitle('');
+      setDesc('');
+      setMeal('');
+      setCuisine('');
+      setIsPublic(true);
+      setVideoFile(null);
+      setIngredients([{ qty: '', name: '' }, { qty: '', name: '' }, { qty: '', name: '' }]);
+      setSteps(['', '']);
+    } catch (err) {
+      Alert.alert('Publish failed', err.message);
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const inputStyle = [cr.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }];
@@ -406,8 +451,10 @@ export default function CreateScreen() {
               <TouchableOpacity onPress={() => setStep(3)} style={[cr.backBtn2, { borderColor: theme.border }]}>
                 <Text style={{ color: theme.text, fontWeight: '600' }}>← Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={publish} style={[cr.nextBtn, { backgroundColor: theme.accent, flex: 1 }]}>
-                <Text style={cr.nextBtnText}>🚀 Publish Recipe</Text>
+              <TouchableOpacity disabled={publishing} onPress={publish} style={[cr.nextBtn, { backgroundColor: theme.accent, flex: 1 }]}>
+                <Text style={cr.nextBtnText}>
+                  {publishing ? 'Publishing...' : 'Publish Recipe'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
