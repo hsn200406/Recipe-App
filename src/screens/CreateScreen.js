@@ -1,4 +1,3 @@
-import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -350,7 +349,7 @@ export default function CreateScreen() {
   const [meal, setMeal] = useState("");
   const [cuisine, setCuisine] = useState("");
   const [isPublic, setIsPublic] = useState(true);
-  const [videoFile, setVideoFile] = useState(null);
+  // const [videoFile, setVideoFile] = useState(null);
   const [ingredients, setIngredients] = useState([
     { qty: "", name: "" },
     { qty: "", name: "" },
@@ -359,25 +358,25 @@ export default function CreateScreen() {
   const [steps, setSteps] = useState(["", ""]);
   const [showAI, setShowAI] = useState(false);
 
-  const pickVideo = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission needed",
-        "Please allow access to your photo library.",
-      );
-      return;
-    }
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      quality: 0.8,
-    });
-    if (!res.canceled && res.assets[0]) {
-      setVideoFile(res.assets[0]);
-      // 🔌 API NOTE: Upload with: await uploadVideo(token, res.assets[0].uri)
-      // from src/services/api.js — returns a videoUrl to store with the recipe
-    }
-  };
+  // const pickVideo = async () => {
+  //   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  //   if (status !== "granted") {
+  //     Alert.alert(
+  //       "Permission needed",
+  //       "Please allow access to your photo library.",
+  //     );
+  //     return;
+  //   }
+  //   const res = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: [ImagePicker.MediaType.Video],
+  //     quality: 0.8,
+  //   });
+  //   if (!res.canceled && res.assets[0]) {
+  //     setVideoFile(res.assets[0]);
+  //     // 🔌 API NOTE: Upload with: await uploadVideo(token, res.assets[0].uri)
+  //     // from src/services/api.js — returns a videoUrl to store with the recipe
+  //   }
+  // };
 
   const updateIngredient = (i, field, val) => {
     const arr = [...ingredients];
@@ -404,6 +403,22 @@ export default function CreateScreen() {
       const cleanIngredients = ingredients.filter((i) => i.name.trim());
       const cleanSteps = steps.filter((s) => s.trim());
 
+      if (cleanIngredients.length === 0) {
+        Alert.alert(
+          "Ingredients required",
+          "Please add at least one ingredient.",
+        );
+        return;
+      }
+
+      if (cleanSteps.length === 0) {
+        Alert.alert(
+          "Steps required",
+          "Please add at least one instruction step.",
+        );
+        return;
+      }
+
       await recipeAPI.create(token, {
         title: title.trim(),
         description: desc.trim(),
@@ -413,6 +428,7 @@ export default function CreateScreen() {
         isPublic,
         ingredients: cleanIngredients,
         steps: cleanSteps,
+        videoUrl: "",
         hasVideo: false,
       });
 
@@ -425,7 +441,7 @@ export default function CreateScreen() {
       setMeal("");
       setCuisine("");
       setIsPublic(true);
-      setVideoFile(null);
+      // setVideoFile(null);
       setIngredients([
         { qty: "", name: "" },
         { qty: "", name: "" },
@@ -598,7 +614,7 @@ export default function CreateScreen() {
             </View>
 
             {/* Video upload */}
-            <View>
+            {/* <View>
               <Text style={[cr.label, { color: theme.muted }]}>
                 RECIPE VIDEO (OPTIONAL)
               </Text>
@@ -635,7 +651,7 @@ export default function CreateScreen() {
                   MP4, MOV · max 500MB
                 </Text>
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             {/* Visibility */}
             <View
@@ -836,7 +852,7 @@ export default function CreateScreen() {
               <Text style={[cr.summaryStat, { color: theme.muted }]}>
                 {ingredients.filter((i) => i.name).length} ingredients ·{" "}
                 {steps.filter((s) => s).length} steps
-                {videoFile ? " · 🎬 Video included" : ""}
+                {/* {videoFile ? " · 🎬 Video included" : ""} */}
               </Text>
             </View>
             <View style={cr.navBtns}>
