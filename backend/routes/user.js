@@ -21,7 +21,36 @@ router.get("/me", auth, async (req, res) => {
 
 router.put("/me", auth, async (req, res) => {
   try {
-    const { name, handle, bio, avatarColor, specialty } = req.body;
+    const name = req.body.name?.trim();
+    const handle = req.body.handle?.trim().toLowerCase();
+    const bio = req.body.bio?.trim();
+    const avatarColor = req.body.avatarColor;
+    const specialty = req.body.specialty?.trim();
+
+    if (name !== undefined && name.length < 5) {
+      return res
+        .status(400)
+        .json({ message: "Name must be at least 5 characters" });
+    }
+
+    if (handle !== undefined && !/^[a-z0-9_]{3,20}$/.test(handle)) {
+      return res.status(400).json({
+        message:
+          "Handle must be 3-20 characters and use only letters, numbers, or underscores",
+      });
+    }
+
+    if (bio !== undefined && bio.length > 160) {
+      return res
+        .status(400)
+        .json({ message: "Bio must be 160 characters or less" });
+    }
+
+    if (specialty !== undefined && specialty.length > 40) {
+      return res
+        .status(400)
+        .json({ message: "Specialty must be 40 characters or less" });
+    }
 
     if (handle) {
       const existing = await User.findOne({

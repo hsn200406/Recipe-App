@@ -155,13 +155,15 @@ export default function HomeScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <View style={styles.userChip}>
-            <Avatar
-              initial={user?.name?.charAt(0).toUpperCase() || "?"}
-              color={user?.avatarColor || theme.accent}
-              size={40}
-            />
-          </View>
+          <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+            <View style={styles.userChip}>
+              <Avatar
+                initial={user?.name?.charAt(0).toUpperCase() || "?"}
+                color={user?.avatarColor || theme.accent}
+                size={40}
+              />
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
 

@@ -7,12 +7,38 @@ const User = require("../models/User");
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
-    const { name, handle, email, password } = req.body;
+    const name = req.body.name?.trim();
+    const handle = req.body.handle?.trim().toLowerCase();
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
 
     if (!name || !handle || !email || !password) {
       return res
         .status(400)
         .json({ message: "Please fill in all required fields" });
+    }
+
+    if (name.length < 5) {
+      return res
+        .status(400)
+        .json({ message: "Name must be at least 5 characters" });
+    }
+
+    if (!/^[a-z0-9_]{3,20}$/.test(handle)) {
+      return res.status(400).json({
+        message:
+          "Handle must be 3-20 characters and use only letters, numbers, or underscores",
+      });
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: "Please enter a valid email" });
+    }
+
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters" });
     }
 
     const existing = await User.findOne({
@@ -66,13 +92,16 @@ router.post("/register", async (req, res) => {
 // LOGIN
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user)
+      return res.status(401).json({ message: "Invalid email or password" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid password" });
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid email or password" });
 
     const token = jwt.sign(
       {

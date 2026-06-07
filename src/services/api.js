@@ -54,6 +54,7 @@ export const recipeAPI = {
     apiFetch(`/recipes?page=${page}&limit=20`, token),
   getFollowing: (token) => apiFetch("/recipes/following", token),
   getById: (token, id) => apiFetch(`/recipes/${id}`, token),
+  getByUser: (userId) => apiFetch(`/recipes/user/${userId}`),
   create: (token, body) =>
     apiFetch("/recipes", token, { method: "POST", body: JSON.stringify(body) }),
   update: (token, id, body) =>

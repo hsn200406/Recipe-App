@@ -1,45 +1,59 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar, Stars, StatCell } from "../components/SharedComponents";
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { RECIPES } from "../data/mockData";
+import { recipeAPI, userAPI } from "../services/api";
 
 export default function CreatorScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
-  const {
-    creator,
-    followedCreators: initialFollowed = [],
-    onToggleFollow,
-  } = route.params || {};
+  const { user, toggleFollow } = useAuth();
+  const { creator } = route.params || {};
 
-  const [followedCreators, setFollowed] = useState(initialFollowed);
-  const isFollowed = followedCreators.includes(creator?.id);
+  const [creatorProfile, setCreatorProfile] = useState(creator);
+  const [theirRecipes, setTheirRecipes] = useState([]);
+  const creatorId = creator?._id || creator?.id;
+  const currentUserId = user?._id || user?.id;
+  const isOwnProfile = creatorId === currentUserId;
+  const isFollowed = user?.following?.includes(creatorId);
 
-  const toggle = () => {
-    setFollowed((prev) =>
-      prev.includes(creator.id)
-        ? prev.filter((x) => x !== creator.id)
-        : [...prev, creator.id],
-    );
-    onToggleFollow && onToggleFollow(creator.id);
+  useEffect(() => {
+    const loadCreator = async () => {
+      try {
+        if (!creator?.handle || !creatorId) return;
+
+        const freshCreator = await userAPI.getProfile(creator.handle);
+        const recipes = await recipeAPI.getByUser(creatorId);
+
+        setCreatorProfile(freshCreator);
+        setTheirRecipes(recipes || []);
+      } catch (err) {
+        console.log("Creator load error:", err.message);
+      }
+    };
+
+    loadCreator();
+  }, [creator?.handle, creatorId]);
+
+  const displayCreator = creatorProfile || creator;
+
+  const toggle = async () => {
+    await toggleFollow(creatorId);
   };
 
   if (!creator) return null;
 
-  const theirRecipes = RECIPES.filter((r) => r.creatorId === creator.id);
-  const featuredRecipes = theirRecipes.filter((r) =>
-    creator.featured?.includes(r.id),
-  );
+  const featuredRecipes = [];
   const heroRecipe = theirRecipes[0];
 
   return (
@@ -75,8 +89,8 @@ export default function CreatorScreen() {
           {/* Avatar */}
           <View style={[s.avatarWrap, { borderColor: theme.bg }]}>
             <Avatar
-              initial={creator.initial}
-              color={creator.avatarColor}
+              initial={displayCreator?.name?.charAt(0)?.toUpperCase() || "?"}
+              color={displayCreator?.avatarColor || theme.accent}
               size={76}
             />
           </View>
@@ -85,36 +99,40 @@ export default function CreatorScreen() {
           <View style={s.nameRow}>
             <View style={{ flex: 1 }}>
               <Text style={[s.name, { color: theme.text }]}>
-                {creator.name}
+                {displayCreator?.name}
               </Text>
               <Text style={[s.handle, { color: theme.muted }]}>
-                @{creator.handle}
+                @{displayCreator?.handle}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={toggle}
-              style={[
-                s.followBtn,
-                {
-                  backgroundColor: isFollowed ? theme.pillBg : theme.accent,
-                  borderColor: isFollowed ? theme.border : theme.accent,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: isFollowed ? theme.muted : "#fff",
-                  fontSize: 14,
-                  fontWeight: "600",
-                }}
+            {!isOwnProfile && (
+              <TouchableOpacity
+                onPress={toggle}
+                style={[
+                  s.followBtn,
+                  {
+                    backgroundColor: isFollowed ? theme.pillBg : theme.accent,
+                    borderColor: isFollowed ? theme.border : theme.accent,
+                  },
+                ]}
               >
-                {isFollowed ? "Following" : "+ Follow"}
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    color: isFollowed ? theme.muted : "#fff",
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  {isFollowed ? "Following" : "+ Follow"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Bio */}
-          <Text style={[s.bio, { color: theme.subtext }]}>{creator.bio}</Text>
+          <Text style={[s.bio, { color: theme.subtext }]}>
+            {displayCreator?.bio || "No bio yet"}
+          </Text>
 
           {/* Specialty badge */}
           <View
@@ -130,7 +148,7 @@ export default function CreatorScreen() {
             <Text
               style={{ fontSize: 12, color: theme.accent, fontWeight: "500" }}
             >
-              Specialises in {creator.specialty}
+              Specialises in {displayCreator?.specialty || "cooking"}
             </Text>
           </View>
 
@@ -141,37 +159,42 @@ export default function CreatorScreen() {
               { backgroundColor: theme.card, borderColor: theme.border },
             ]}
           >
-            <StatCell value={creator.recipeCount} label="Recipes" borderRight />
+            <StatCell value={theirRecipes.length} label="Recipes" borderRight />
             <StatCell
-              value={creator.followers.toLocaleString()}
+              value={(displayCreator?.followers?.length || 0).toLocaleString()}
               label="Followers"
               borderRight
             />
-            <StatCell value={creator.following} label="Following" />
+            <StatCell
+              value={displayCreator?.following?.length || 0}
+              label="Following"
+            />
           </View>
 
           {/* Action buttons */}
           <View style={s.actionRow}>
-            <TouchableOpacity
-              onPress={toggle}
-              style={[
-                s.actionBtn,
-                {
-                  backgroundColor: isFollowed ? theme.pillBg : theme.accent,
-                  flex: 2,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: isFollowed ? theme.muted : "#fff",
-                  fontWeight: "600",
-                  fontSize: 14,
-                }}
+            {!isOwnProfile && (
+              <TouchableOpacity
+                onPress={toggle}
+                style={[
+                  s.actionBtn,
+                  {
+                    backgroundColor: isFollowed ? theme.pillBg : theme.accent,
+                    flex: 2,
+                  },
+                ]}
               >
-                {isFollowed ? "✓ Following" : "+ Follow"}
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{
+                    color: isFollowed ? theme.muted : "#fff",
+                    fontWeight: "600",
+                    fontSize: 14,
+                  }}
+                >
+                  {isFollowed ? "✓ Following" : "+ Follow"}
+                </Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={[
                 s.actionBtn,
@@ -197,12 +220,10 @@ export default function CreatorScreen() {
             <View style={s.featuredGrid}>
               {featuredRecipes.map((r) => (
                 <TouchableOpacity
-                  key={r.id}
+                  key={r._id || r.id}
                   onPress={() =>
                     navigation.navigate("RecipeDetail", {
                       recipe: r,
-                      followedCreators,
-                      onToggleFollow: toggle,
                     })
                   }
                   style={[
@@ -245,12 +266,10 @@ export default function CreatorScreen() {
           </Text>
           {theirRecipes.map((r) => (
             <TouchableOpacity
-              key={r.id}
+              key={r._id || r.id}
               onPress={() =>
                 navigation.navigate("RecipeDetail", {
                   recipe: r,
-                  followedCreators,
-                  onToggleFollow: toggle,
                 })
               }
               style={[
@@ -287,7 +306,7 @@ export default function CreatorScreen() {
                 >
                   <Stars rating={r.rating} size={11} />
                   <Text style={{ fontSize: 11, color: theme.muted }}>
-                    {r.rating} · ♥ {r.likes.toLocaleString()} · 💬{" "}
+                    {r.rating} · ♥ {(r.likes || 0).toLocaleString()} · 💬{" "}
                     {r.commentCount}
                   </Text>
                 </View>

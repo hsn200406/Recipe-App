@@ -261,7 +261,7 @@ function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
             </TouchableOpacity> */}
             <View style={styles.actionBtn}>
               <Text style={{ fontSize: 15, color: theme.muted }}>
-                Comments: {recipe.commentCount || 0}
+                Reviews: {recipe.commentCount || 0}
               </Text>
             </View>
           </View>

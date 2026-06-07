@@ -22,10 +22,32 @@ const User = require("../models/User");
 // GET    /api/recipes/:id          Get public recipe by id
 
 router.get("/", async (req, res) => {
-  const recipes = await Recipe.find({ isPublic: true })
-    .populate("creatorId", "name handle avatarColor specialty")
-    .sort({ createdAt: -1 });
-  res.json(recipes);
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const recipes = await Recipe.find({ isPublic: true })
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Recipe.countDocuments({ isPublic: true });
+
+    res.json({
+      recipes,
+      page,
+      limit,
+      total,
+      hasMore: skip + recipes.length < total,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 router.post("/", auth, async (req, res) => {
@@ -99,7 +121,10 @@ router.post("/", auth, async (req, res) => {
 router.get("/me", auth, async (req, res) => {
   try {
     const recipes = await Recipe.find({ creatorId: req.userId })
-      .populate("creatorId", "name handle avatarColor specialty")
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
       .sort({ createdAt: -1 });
 
     res.json(recipes);
@@ -118,7 +143,10 @@ router.get("/user/:userId", async (req, res) => {
       creatorId: req.params.userId,
       isPublic: true,
     })
-      .populate("creatorId", "name handle avatarColor specialty")
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
       .sort({ createdAt: -1 });
 
     res.json(recipes);
@@ -239,7 +267,10 @@ router.put("/:id", auth, async (req, res) => {
       req.params.id,
       updates,
       { new: true, runValidators: true },
-    ).populate("creatorId", "name handle avatarColor specialty");
+    ).populate(
+      "creatorId",
+      "name handle avatarColor specialty followers following bio",
+    );
 
     res.json(updatedRecipe);
   } catch (err) {
@@ -393,7 +424,10 @@ router.get("/saved", auth, async (req, res) => {
       _id: { $in: user.savedRecipes },
       isPublic: true,
     })
-      .populate("creatorId", "name handle avatarColor specialty")
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
       .sort({ createdAt: -1 });
 
     res.json(recipes);
@@ -414,7 +448,10 @@ router.get("/following", auth, async (req, res) => {
       creatorId: { $in: user.following },
       isPublic: true,
     })
-      .populate("creatorId", "name handle avatarColor specialty")
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
       .sort({ createdAt: -1 });
 
     res.json(recipes);
@@ -457,7 +494,10 @@ router.get("/search", async (req, res) => {
     if (fat === "Low") filter.fat = { $lte: 10 };
 
     const recipes = await Recipe.find(filter)
-      .populate("creatorId", "name handle avatarColor specialty")
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
       .sort({ rating: -1, likes: -1, createdAt: -1 });
 
     res.json(recipes);
@@ -505,7 +545,7 @@ router.get("/:id", async (req, res) => {
 
     const recipe = await Recipe.findById(req.params.id).populate(
       "creatorId",
-      "name handle avatarColor specialty",
+      "name handle avatarColor specialty followers following bio",
     );
 
     if (!recipe) {

@@ -145,10 +145,17 @@ export function AuthProvider({ children }) {
 
       const data = await res.json();
 
-      setUser((prev) => ({
-        ...prev,
-        savedRecipes: data.savedRecipes,
-      }));
+      setUser((prev) => {
+        const updatedUser = {
+          ...prev,
+          savedRecipes: data.savedRecipes,
+        };
+
+        SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
+
+      return data;
     } catch (err) {
       console.log(err.message);
     }
@@ -170,10 +177,17 @@ export function AuthProvider({ children }) {
         throw new Error(data.message || "Follow failed");
       }
 
-      setUser((prev) => ({
-        ...prev,
-        following: data.following || [],
-      }));
+      setUser((prev) => {
+        const updatedUser = {
+          ...prev,
+          following: data.following || [],
+        };
+
+        SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
+
+      return data;
     } catch (err) {
       console.log("Follow error:", err.message);
     }

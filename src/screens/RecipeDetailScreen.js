@@ -366,6 +366,8 @@ export default function RecipeDetailScreen() {
           followers: 0,
         };
   const creatorId = creator._id || recipe.creatorId;
+  const currentUserId = user?._id || user?.id;
+  const isOwnRecipe = creatorId === currentUserId;
   const authFollowed = followedCreators.includes(creatorId);
   const [isFollowed, setIsFollowed] = useState(authFollowed);
 
@@ -515,29 +517,31 @@ export default function RecipeDetailScreen() {
               {(creator.followers?.length || 0).toLocaleString()} followers
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={async () => {
-              setIsFollowed((v) => !v);
-              await toggleFollow(creatorId);
-            }}
-            style={[
-              s.followBtn,
-              {
-                backgroundColor: isFollowed ? theme.pillBg : theme.accent,
-                borderColor: isFollowed ? theme.border : theme.accent,
-              },
-            ]}
-          >
-            <Text
-              style={{
-                color: isFollowed ? theme.muted : "#fff",
-                fontSize: 12,
-                fontWeight: "600",
+          {!isOwnRecipe && (
+            <TouchableOpacity
+              onPress={async () => {
+                setIsFollowed((v) => !v);
+                await toggleFollow(creatorId);
               }}
+              style={[
+                s.followBtn,
+                {
+                  backgroundColor: isFollowed ? theme.pillBg : theme.accent,
+                  borderColor: isFollowed ? theme.border : theme.accent,
+                },
+              ]}
             >
-              {isFollowed ? "Following" : "+ Follow"}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={{
+                  color: isFollowed ? theme.muted : "#fff",
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                {isFollowed ? "Following" : "+ Follow"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </TouchableOpacity>
 
         <Text style={[s.sectionTitle, { color: theme.muted, marginTop: 16 }]}>
