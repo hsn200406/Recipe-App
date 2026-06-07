@@ -1,8 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
-
-// 🔌 Replace with your backend URL
-export const API_BASE_URL = "http://192.168.0.103:5000/api";
+import { API_BASE_URL } from "../services/api";
 
 const AuthContext = createContext(null);
 

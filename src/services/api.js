@@ -99,6 +99,7 @@ export const userAPI = {
   getProfile: (handle) => apiFetch(`/user/${handle}`),
   updateProfile: (token, body) =>
     apiFetch("/user/me", token, { method: "PUT", body: JSON.stringify(body) }),
+  deleteMe: (token) => apiFetch("/user/me", token, { method: "DELETE" }),
   follow: (token, userId) =>
     apiFetch(`/user/follow/${userId}`, token, { method: "POST" }),
 };
@@ -122,12 +123,8 @@ export const notificationAPI = {
 
 // ── Share ─────────────────────────────────────────────────────────────────────
 export const shareAPI = {
-  // toUserId — share with another app user
-  shareWithUser: (token, recipeId, toUserId) =>
-    apiFetch(`/recipes/${recipeId}/share`, token, {
-      method: "POST",
-      body: JSON.stringify({ toUserId }),
-    }),
+  shareRecipe: (token, recipeId) =>
+    apiFetch(`/recipes/${recipeId}/share`, token, { method: "POST" }),
 };
 
 // ── AI (calls backend which calls Google Vision + OpenAI Whisper) ─────────────

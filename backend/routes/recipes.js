@@ -155,6 +155,22 @@ router.get("/user/:userId", async (req, res) => {
   }
 });
 
+router.get("/:id/liked-by", async (req, res) => {
+  try {
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid recipe ID" });
+    }
+
+    const users = await User.find({ likedRecipes: req.params.id }).select(
+      "name handle avatarColor specialty",
+    );
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.delete("/:id", auth, async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {

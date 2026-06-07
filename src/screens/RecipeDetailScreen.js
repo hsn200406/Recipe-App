@@ -6,6 +6,7 @@ import {
   Modal,
   Platform,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -17,7 +18,7 @@ import { Avatar, MacroBar, Stars } from "../components/SharedComponents";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { CREATORS } from "../data/mockData";
-import { reviewAPI } from "../services/api";
+import { reviewAPI, shareAPI } from "../services/api";
 
 // ── Share Modal ───────────────────────────────────────────────────────────────
 function ShareModal({ visible, recipe, onClose }) {
@@ -340,6 +341,7 @@ export default function RecipeDetailScreen() {
   const [liked, setLiked] = useState(initialRecipe?.isLiked ?? authLiked);
   const [saved, setSaved] = useState(initialRecipe?.isSaved ?? authSaved);
   const [likeCount, setLikeCount] = useState(initialRecipe?.likes || 0);
+  const [shareCount, setShareCount] = useState(initialRecipe?.shares || 0);
 
   useEffect(() => {
     setLiked(authLiked);
@@ -351,7 +353,6 @@ export default function RecipeDetailScreen() {
 
   const [reviews, setReviews] = useState(initialRecipe?.reviews || []);
   const [comment, setComment] = useState("");
-  const [showShare, setShowShare] = useState(false);
   const [showReview, setShowReview] = useState(false);
 
   const creator =
@@ -401,11 +402,6 @@ export default function RecipeDetailScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
-      <ShareModal
-        visible={showShare}
-        recipe={recipe}
-        onClose={() => setShowShare(false)}
-      />
       <ReviewModal
         visible={showReview}
         onClose={() => setShowReview(false)}
@@ -635,7 +631,18 @@ export default function RecipeDetailScreen() {
               label: "Share",
               color: theme.muted,
               active: false,
-              onPress: () => setShowShare(true),
+              onPress: async () => {
+                try {
+                  await Share.share({
+                    message: `Check out this recipe: ${recipe.title}`,
+                  });
+
+                  const data = await shareAPI.shareRecipe(token, recipeId);
+                  setShareCount(data.shares);
+                } catch (err) {
+                  Alert.alert("Share failed", err.message);
+                }
+              },
             },
           ].map((btn) => (
             <TouchableOpacity
@@ -688,7 +695,7 @@ export default function RecipeDetailScreen() {
             ["⏱", recipe.time],
             ["🔥", `${recipe.calories} cal`],
             ["💬", recipe.commentCount],
-            ["↗", recipe.shares],
+            ["↗", shareCount],
           ].map(([icon, val], i) => (
             <View
               key={i}

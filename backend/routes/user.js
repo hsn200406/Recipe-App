@@ -86,6 +86,34 @@ router.put("/me", auth, async (req, res) => {
   }
 });
 
+router.delete("/me", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await Recipe.deleteMany({ creatorId: req.userId });
+
+    await User.updateMany(
+      { following: req.userId },
+      { $pull: { following: req.userId } },
+    );
+
+    await User.updateMany(
+      { followers: req.userId },
+      { $pull: { followers: req.userId } },
+    );
+
+    await User.findByIdAndDelete(req.userId);
+
+    res.json({ message: "Account deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // LIKE recipe
 router.post("/like/:id", auth, async (req, res) => {
   const user = await User.findById(req.userId);
