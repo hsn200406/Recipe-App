@@ -2,6 +2,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -20,124 +21,6 @@ import { useTheme } from "../context/ThemeContext";
 import { CREATORS } from "../data/mockData";
 import { reviewAPI, shareAPI } from "../services/api";
 
-// ── Share Modal ───────────────────────────────────────────────────────────────
-function ShareModal({ visible, recipe, onClose }) {
-  const { theme } = useTheme();
-  const [copied, setCopied] = useState(false);
-  const [sentTo, setSentTo] = useState(null);
-  const friends = [
-    { handle: "mikec", initial: "M", color: "#7C3AED" },
-    { handle: "jas_cook", initial: "J", color: "#2563EB" },
-    { handle: "fitvegan", initial: "F", color: "#059669" },
-  ];
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity
-        style={[ms.overlay, { backgroundColor: theme.overlay }]}
-        activeOpacity={1}
-        onPress={onClose}
-      />
-      <View
-        style={[
-          ms.sheet,
-          { backgroundColor: theme.surface, borderTopColor: theme.border },
-        ]}
-      >
-        <View style={ms.sheetHandle} />
-        <View style={ms.sheetHeader}>
-          <Text style={[ms.sheetTitle, { color: theme.text }]}>
-            Share Recipe
-          </Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={{ fontSize: 22, color: theme.muted }}>×</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={[ms.label, { color: theme.muted }]}>
-          Send to a friend on the app:
-        </Text>
-        <View style={ms.friendsRow}>
-          {friends.map((f) => (
-            <TouchableOpacity
-              key={f.handle}
-              onPress={() => {
-                setSentTo(f.handle);
-              }}
-              style={ms.friendItem}
-            >
-              <View
-                style={{
-                  borderWidth: 2,
-                  borderColor:
-                    sentTo === f.handle ? theme.accent : "transparent",
-                  borderRadius: 24,
-                  padding: 2,
-                }}
-              >
-                <Avatar initial={f.initial} color={f.color} size={44} />
-              </View>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: sentTo === f.handle ? theme.accent : theme.muted,
-                  marginTop: 4,
-                }}
-              >
-                @{f.handle}
-              </Text>
-              {sentTo === f.handle && (
-                <Text style={{ fontSize: 10, color: theme.green }}>
-                  ✓ Sent!
-                </Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View
-          style={[
-            ms.linkRow,
-            { backgroundColor: theme.inputBg, borderColor: theme.border },
-          ]}
-        >
-          <Text
-            style={{ flex: 1, color: theme.muted, fontSize: 12 }}
-            numberOfLines={1}
-          >
-            https://recipesocial.app/recipe/{recipe?.id}
-          </Text>
-          <TouchableOpacity
-            onPress={() => {
-              setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
-            }}
-            style={[
-              ms.copyBtn,
-              { backgroundColor: copied ? theme.green : theme.accent },
-            ]}
-          >
-            <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
-              {copied ? "✓ Copied!" : "Copy Link"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <Text
-          style={{
-            textAlign: "center",
-            fontSize: 11,
-            color: theme.muted,
-            marginTop: 8,
-          }}
-        >
-          Anyone with this link can view the recipe
-        </Text>
-      </View>
-    </Modal>
-  );
-}
 const ms = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject },
   sheet: {
@@ -427,7 +310,15 @@ export default function RecipeDetailScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
           <Text style={{ color: "#fff", fontSize: 18 }}>←</Text>
         </TouchableOpacity>
-        <Text style={s.heroEmoji}>{recipe.emoji}</Text>
+        {recipe.imageUrl ? (
+          <Image
+            source={{ uri: recipe.imageUrl }}
+            style={s.heroImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={s.heroEmoji}>{recipe.emoji}</Text>
+        )}
         {recipe.hasVideo && (
           <TouchableOpacity
             style={s.watchBtn}
@@ -902,12 +793,14 @@ const s = StyleSheet.create({
     position: "absolute",
     top: 16,
     left: 16,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    borderRadius: 20,
     width: 38,
     height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    zIndex: 10,
+    elevation: 10,
   },
   heroEmoji: { fontSize: 76, zIndex: 1 },
   watchBtn: {
@@ -1065,4 +958,10 @@ const s = StyleSheet.create({
     letterSpacing: 0.5,
   },
   desc: { fontSize: 14, lineHeight: 22 },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    zIndex: 0,
+  },
 });

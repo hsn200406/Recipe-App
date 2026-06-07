@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -83,7 +84,15 @@ function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
             { backgroundColor: recipe.accentColor + "44" },
           ]}
         />
-        <Text style={styles.heroEmoji}>{recipe.emoji}</Text>
+        {recipe.imageUrl ? (
+          <Image
+            source={{ uri: recipe.imageUrl }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.heroEmoji}>{recipe.emoji}</Text>
+        )}
 
         {recipe.hasVideo && (
           <View style={styles.videoBadge}>
@@ -376,5 +385,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 3,
+  },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+    position: "absolute",
   },
 });

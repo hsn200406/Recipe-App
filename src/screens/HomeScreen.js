@@ -173,7 +173,7 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scroll}
         >
           {/* AI Capture Banner */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               styles.aiBanner,
               {
@@ -210,7 +210,7 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Text style={{ color: theme.accent, fontSize: 18 }}>→</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {/* Feed tab switcher */}
           <View
