@@ -2,6 +2,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -283,16 +284,28 @@ export default function ProfileScreen() {
                     { backgroundColor: recipe.cardColor || "#1A1410" },
                   ]}
                 >
-                  <View
-                    style={[
-                      StyleSheet.absoluteFillObject,
-                      {
-                        backgroundColor:
-                          (recipe.accentColor || theme.accent) + "44",
-                      },
-                    ]}
-                  />
-                  <Text style={{ fontSize: 30 }}>{recipe.emoji || "🍽"}</Text>
+                  {recipe.imageUrl ? (
+                    <Image
+                      source={{ uri: recipe.imageUrl }}
+                      style={s.recipeImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <>
+                      <View
+                        style={[
+                          StyleSheet.absoluteFillObject,
+                          {
+                            backgroundColor:
+                              (recipe.accentColor || theme.accent) + "44",
+                          },
+                        ]}
+                      />
+                      <Text style={{ fontSize: 30 }}>
+                        {recipe.emoji || "🍽️"}
+                      </Text>
+                    </>
+                  )}
                 </View>
 
                 <View style={{ flex: 1 }}>
@@ -483,5 +496,9 @@ const s = StyleSheet.create({
     color: "#EF4444",
     fontSize: 12,
     fontWeight: "600",
+  },
+  recipeImage: {
+    width: "100%",
+    height: "100%",
   },
 });
