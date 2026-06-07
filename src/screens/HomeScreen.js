@@ -22,7 +22,7 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [feedTab, setFeedTab] = useState("foryou");
-  const unreadNotifs = 3;
+  const unreadNotifs = 0;
   const opacity = useRef(new Animated.Value(1)).current;
   const [animating, setAnimating] = useState(false);
   const [feed, setFeed] = useState([]);

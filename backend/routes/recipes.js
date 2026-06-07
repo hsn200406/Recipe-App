@@ -155,6 +155,124 @@ router.get("/user/:userId", async (req, res) => {
   }
 });
 
+router.get("/saved", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Current user not found" });
+    }
+
+    const recipes = await Recipe.find({
+      _id: { $in: user.savedRecipes },
+      isPublic: true,
+    })
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
+      .sort({ createdAt: -1 });
+
+    res.json(recipes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/following", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Current user not found" });
+    }
+
+    const recipes = await Recipe.find({
+      creatorId: { $in: user.following },
+      isPublic: true,
+    })
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
+      .sort({ createdAt: -1 });
+
+    res.json(recipes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/search", async (req, res) => {
+  try {
+    const { q, cuisine, meal, protein, carbs, fat } = req.query;
+
+    const filter = { isPublic: true };
+
+    if (q) {
+      filter.$or = [
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+        { cuisine: { $regex: q, $options: "i" } },
+        { meal: { $regex: q, $options: "i" } },
+        { tags: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    if (cuisine && cuisine !== "All") {
+      filter.cuisine = cuisine;
+    }
+
+    if (meal && meal !== "All") {
+      filter.meal = meal;
+    }
+
+    if (protein === "High") filter.protein = { $gte: 30 };
+    if (protein === "Low") filter.protein = { $lte: 15 };
+
+    if (carbs === "High") filter.carbs = { $gte: 60 };
+    if (carbs === "Low") filter.carbs = { $lte: 30 };
+
+    if (fat === "High") filter.fat = { $gte: 25 };
+    if (fat === "Low") filter.fat = { $lte: 10 };
+
+    const recipes = await Recipe.find(filter)
+      .populate(
+        "creatorId",
+        "name handle avatarColor specialty followers following bio",
+      )
+      .sort({ rating: -1, likes: -1, createdAt: -1 });
+
+    res.json(recipes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post("/:id/share", auth, async (req, res) => {
+  try {
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid recipe ID" });
+    }
+
+    const recipe = await Recipe.findById(req.params.id);
+
+    if (!recipe) {
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+
+    recipe.shares += 1;
+
+    await recipe.save();
+
+    res.json({
+      shares: recipe.shares,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get("/:id/liked-by", async (req, res) => {
   try {
     if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -422,131 +540,6 @@ router.post("/:id/reviews", auth, async (req, res) => {
       rating: recipe.rating,
       ratingCount: recipe.ratingCount,
       commentCount: recipe.commentCount,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/saved", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "Current user not found" });
-    }
-
-    const recipes = await Recipe.find({
-      _id: { $in: user.savedRecipes },
-      isPublic: true,
-    })
-      .populate(
-        "creatorId",
-        "name handle avatarColor specialty followers following bio",
-      )
-      .sort({ createdAt: -1 });
-
-    res.json(recipes);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/following", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "Current user not found" });
-    }
-
-    const recipes = await Recipe.find({
-      creatorId: { $in: user.following },
-      isPublic: true,
-    })
-      .populate(
-        "creatorId",
-        "name handle avatarColor specialty followers following bio",
-      )
-      .sort({ createdAt: -1 });
-
-    res.json(recipes);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/search", async (req, res) => {
-  try {
-    const { q, cuisine, meal, protein, carbs, fat } = req.query;
-
-    const filter = { isPublic: true };
-
-    if (q) {
-      filter.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-        { cuisine: { $regex: q, $options: "i" } },
-        { meal: { $regex: q, $options: "i" } },
-        { tags: { $regex: q, $options: "i" } },
-      ];
-    }
-
-    if (cuisine && cuisine !== "All") {
-      filter.cuisine = cuisine;
-    }
-
-    if (meal && meal !== "All") {
-      filter.meal = meal;
-    }
-
-    if (protein === "High") filter.protein = { $gte: 30 };
-    if (protein === "Low") filter.protein = { $lte: 15 };
-
-    if (carbs === "High") filter.carbs = { $gte: 60 };
-    if (carbs === "Low") filter.carbs = { $lte: 30 };
-
-    if (fat === "High") filter.fat = { $gte: 25 };
-    if (fat === "Low") filter.fat = { $lte: 10 };
-
-    const recipes = await Recipe.find(filter)
-      .populate(
-        "creatorId",
-        "name handle avatarColor specialty followers following bio",
-      )
-      .sort({ rating: -1, likes: -1, createdAt: -1 });
-
-    res.json(recipes);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/test-auth", auth, (req, res) => {
-  res.json({
-    message: "You are authenticated 🎉",
-    userId: req.userId,
-  });
-});
-
-router.post("/:id/share", auth, async (req, res) => {
-  try {
-    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: "Invalid recipe ID" });
-    }
-
-    const recipe = await Recipe.findById(req.params.id);
-
-    if (!recipe) {
-      return res.status(404).json({ message: "Recipe not found" });
-    }
-
-    recipe.shares += 1;
-
-    await recipe.save();
-
-    res.json({
-      shares: recipe.shares,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

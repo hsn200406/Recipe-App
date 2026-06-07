@@ -348,6 +348,11 @@ export default function CreateScreen() {
   const [desc, setDesc] = useState("");
   const [meal, setMeal] = useState("");
   const [cuisine, setCuisine] = useState("");
+  const [time, setTime] = useState("");
+  const [calories, setCalories] = useState("");
+  const [protein, setProtein] = useState("");
+  const [carbs, setCarbs] = useState("");
+  const [fat, setFat] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   // const [videoFile, setVideoFile] = useState(null);
   const [ingredients, setIngredients] = useState([
@@ -430,6 +435,11 @@ export default function CreateScreen() {
         steps: cleanSteps,
         videoUrl: "",
         hasVideo: false,
+        time: time.trim(),
+        calories: Number(calories) || 0,
+        protein: Number(protein) || 0,
+        carbs: Number(carbs) || 0,
+        fat: Number(fat) || 0,
       });
 
       Alert.alert("Recipe Published!", "Your recipe was saved successfully.");
@@ -440,6 +450,11 @@ export default function CreateScreen() {
       setImageUrl("");
       setMeal("");
       setCuisine("");
+      setTime("");
+      setCalories("");
+      setProtein("");
+      setCarbs("");
+      setFat("");
       setIsPublic(true);
       // setVideoFile(null);
       setIngredients([
@@ -611,6 +626,55 @@ export default function CreateScreen() {
                   </View>
                 ))}
               </ScrollView>
+            </View>
+
+            <View>
+              <Text style={[cr.label, { color: theme.muted }]}>TIME</Text>
+              <TextInput
+                value={time}
+                onChangeText={setTime}
+                placeholder="e.g. 30 min"
+                placeholderTextColor={theme.muted}
+                style={inputStyle}
+              />
+            </View>
+
+            <View style={cr.twoCol}>
+              <TextInput
+                value={calories}
+                onChangeText={setCalories}
+                placeholder="Calories"
+                placeholderTextColor={theme.muted}
+                keyboardType="numeric"
+                style={[inputStyle, { flex: 1 }]}
+              />
+              <TextInput
+                value={protein}
+                onChangeText={setProtein}
+                placeholder="Protein"
+                placeholderTextColor={theme.muted}
+                keyboardType="numeric"
+                style={[inputStyle, { flex: 1 }]}
+              />
+            </View>
+
+            <View style={cr.twoCol}>
+              <TextInput
+                value={carbs}
+                onChangeText={setCarbs}
+                placeholder="Carbs"
+                placeholderTextColor={theme.muted}
+                keyboardType="numeric"
+                style={[inputStyle, { flex: 1 }]}
+              />
+              <TextInput
+                value={fat}
+                onChangeText={setFat}
+                placeholder="Fat"
+                placeholderTextColor={theme.muted}
+                keyboardType="numeric"
+                style={[inputStyle, { flex: 1 }]}
+              />
             </View>
 
             {/* Video upload */}
@@ -842,7 +906,9 @@ export default function CreateScreen() {
                 {title || "Untitled Recipe"}
               </Text>
               <Text style={[cr.summaryMeta, { color: theme.muted }]}>
-                {meal} · {cuisine} · {isPublic ? "🌍 Public" : "🔒 Private"}
+                {[meal, cuisine, isPublic ? "Public" : "Private"]
+                  .filter(Boolean)
+                  .join(" · ")}
               </Text>
               {desc ? (
                 <Text style={[cr.summaryDesc, { color: theme.subtext }]}>

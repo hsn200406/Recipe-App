@@ -225,6 +225,11 @@ export default function RecipeDetailScreen() {
   const [saved, setSaved] = useState(initialRecipe?.isSaved ?? authSaved);
   const [likeCount, setLikeCount] = useState(initialRecipe?.likes || 0);
   const [shareCount, setShareCount] = useState(initialRecipe?.shares || 0);
+  const hasNutrition =
+    recipe.calories > 0 ||
+    recipe.protein > 0 ||
+    recipe.carbs > 0 ||
+    recipe.fat > 0;
 
   useEffect(() => {
     setLiked(authLiked);
@@ -319,7 +324,7 @@ export default function RecipeDetailScreen() {
         ) : (
           <Text style={s.heroEmoji}>{recipe.emoji}</Text>
         )}
-        {recipe.hasVideo && (
+        {/* {recipe.hasVideo && (
           <TouchableOpacity
             style={s.watchBtn}
             onPress={() =>
@@ -333,7 +338,7 @@ export default function RecipeDetailScreen() {
               ▶ Watch Recipe Video
             </Text>
           </TouchableOpacity>
-        )}
+        )} */}
         <View style={s.heroRating}>
           <Text style={{ color: theme.gold, fontWeight: "600", fontSize: 12 }}>
             ★ {recipe.rating}
@@ -358,28 +363,30 @@ export default function RecipeDetailScreen() {
           showsHorizontalScrollIndicator={false}
           style={{ marginBottom: 14 }}
         >
-          {[recipe.meal, recipe.cuisine, ...safeRecipe.tags].map((t, i) => (
-            <View
-              key={i}
-              style={[
-                s.tag,
-                {
-                  backgroundColor: i < 2 ? theme.accentSoft : theme.pillBg,
-                  borderColor: i < 2 ? theme.accent + "44" : theme.border,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: i < 2 ? theme.accent : theme.pillText,
-                  fontWeight: i < 2 ? "600" : "400",
-                }}
+          {[recipe.meal, recipe.cuisine, ...safeRecipe.tags]
+            .filter(Boolean)
+            .map((t, i) => (
+              <View
+                key={i}
+                style={[
+                  s.tag,
+                  {
+                    backgroundColor: i < 2 ? theme.accentSoft : theme.pillBg,
+                    borderColor: i < 2 ? theme.accent + "44" : theme.border,
+                  },
+                ]}
               >
-                {t}
-              </Text>
-            </View>
-          ))}
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: i < 2 ? theme.accent : theme.pillText,
+                    fontWeight: i < 2 ? "600" : "400",
+                  }}
+                >
+                  {t}
+                </Text>
+              </View>
+            ))}
         </ScrollView>
 
         {/* Creator card */}
@@ -439,44 +446,46 @@ export default function RecipeDetailScreen() {
         </Text>
 
         {/* Nutrition card */}
-        <View
-          style={[
-            s.nutritionCard,
-            { backgroundColor: theme.card, borderColor: theme.border },
-          ]}
-        >
-          <Text style={[s.sectionLabel, { color: theme.muted }]}>
-            NUTRITION PER SERVING
-          </Text>
-          <View style={s.nutritionInner}>
-            <View style={s.calBox}>
-              <Text style={[s.calNum, { color: theme.text }]}>
-                {recipe.calories}
-              </Text>
-              <Text style={[s.calLabel, { color: theme.muted }]}>kcal</Text>
-            </View>
-            <View style={{ flex: 1, flexDirection: "row", gap: 10 }}>
-              <MacroBar
-                label="Protein"
-                value={recipe.protein}
-                max={60}
-                color="#4CAF82"
-              />
-              <MacroBar
-                label="Carbs"
-                value={recipe.carbs}
-                max={100}
-                color="#F5C842"
-              />
-              <MacroBar
-                label="Fat"
-                value={recipe.fat}
-                max={50}
-                color="#FF5C3A"
-              />
+        {hasNutrition && (
+          <View
+            style={[
+              s.nutritionCard,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+          >
+            <Text style={[s.sectionLabel, { color: theme.muted }]}>
+              NUTRITION PER SERVING
+            </Text>
+            <View style={s.nutritionInner}>
+              <View style={s.calBox}>
+                <Text style={[s.calNum, { color: theme.text }]}>
+                  {recipe.calories}
+                </Text>
+                <Text style={[s.calLabel, { color: theme.muted }]}>kcal</Text>
+              </View>
+              <View style={{ flex: 1, flexDirection: "row", gap: 10 }}>
+                <MacroBar
+                  label="Protein"
+                  value={recipe.protein}
+                  max={60}
+                  color="#4CAF82"
+                />
+                <MacroBar
+                  label="Carbs"
+                  value={recipe.carbs}
+                  max={100}
+                  color="#F5C842"
+                />
+                <MacroBar
+                  label="Fat"
+                  value={recipe.fat}
+                  max={50}
+                  color="#FF5C3A"
+                />
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* Action buttons */}
         <View style={s.actionGrid}>
@@ -583,10 +592,10 @@ export default function RecipeDetailScreen() {
           ]}
         >
           {[
-            ["⏱", recipe.time],
-            ["🔥", `${recipe.calories} cal`],
-            ["💬", recipe.commentCount],
-            ["↗", shareCount],
+            ["⏱", recipe.time || "N/A"],
+            ["🔥", recipe.calories ? `${recipe.calories} cal` : "N/A"],
+            ["💬", recipe.commentCount || 0],
+            ["↗", shareCount || 0],
           ].map(([icon, val], i) => (
             <View
               key={i}
@@ -957,7 +966,6 @@ const s = StyleSheet.create({
     marginBottom: 6,
     letterSpacing: 0.5,
   },
-  desc: { fontSize: 14, lineHeight: 22 },
   heroImage: {
     width: "100%",
     height: "100%",

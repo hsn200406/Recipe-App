@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../components/SharedComponents";
 import { useTheme } from "../context/ThemeContext";
-import { NOTIFICATIONS } from "../data/mockData";
+// import { NOTIFICATIONS } from "../data/mockData";
 
 const NOTIF_ICON = { follow: "👤", like: "♥", comment: "💬", share: "↗" };
 const NOTIF_COLOR = (type, theme) =>
@@ -24,7 +24,7 @@ const NOTIF_COLOR = (type, theme) =>
 export default function NotificationsScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const [notifs, setNotifs] = useState(NOTIFICATIONS);
+  const [notifs, setNotifs] = useState([]);
 
   const unreadCount = notifs.filter((n) => !n.read).length;
   const markRead = (id) =>
