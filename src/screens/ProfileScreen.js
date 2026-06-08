@@ -221,7 +221,18 @@ export default function ProfileScreen() {
                 s.editBtn,
                 { backgroundColor: theme.card, borderColor: theme.border },
               ]}
-              onPress={logout}
+              onPress={() =>
+                Alert.alert("Log Out", "Are you sure you want to log out?", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Log Out",
+                    style: "destructive",
+                    onPress: async () => {
+                      await logout();
+                    },
+                  },
+                ])
+              }
             >
               <Text style={[s.editBtnText, { color: theme.text }]}>
                 Log Out

@@ -115,11 +115,11 @@ export const reviewAPI = {
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────
-export const notificationAPI = {
-  getAll: (token) => apiFetch("/notifications", token),
-  markAllRead: (token) =>
-    apiFetch("/notifications/read-all", token, { method: "PUT" }),
-};
+// export const notificationAPI = {
+//   getAll: (token) => apiFetch("/notifications", token),
+//   markAllRead: (token) =>
+//     apiFetch("/notifications/read-all", token, { method: "PUT" }),
+// };
 
 // ── Share ─────────────────────────────────────────────────────────────────────
 export const shareAPI = {
@@ -132,29 +132,29 @@ export const shareAPI = {
 //   GOOGLE_VISION_API_KEY=...    (console.cloud.google.com → Vision API)
 //   OPENAI_API_KEY=...           (platform.openai.com → API keys)
 // NEVER put these keys in the React Native app.
-export const aiAPI = {
-  // POST /api/ai/scan-ingredients  body: { imageBase64 }  → { ingredients: [] }
-  scanIngredients: (token, imageBase64) =>
-    apiFetch("/ai/scan-ingredients", token, {
-      method: "POST",
-      body: JSON.stringify({ imageBase64 }),
-    }),
+// export const aiAPI = {
+//   // POST /api/ai/scan-ingredients  body: { imageBase64 }  → { ingredients: [] }
+//   scanIngredients: (token, imageBase64) =>
+//     apiFetch("/ai/scan-ingredients", token, {
+//       method: "POST",
+//       body: JSON.stringify({ imageBase64 }),
+//     }),
 
-  // POST /api/ai/transcribe  (FormData with audio)  → { transcript, structuredRecipe }
-  transcribeAudio: async (token, audioUri) => {
-    const formData = new FormData();
-    formData.append("audio", {
-      uri: audioUri,
-      name: "recording.m4a",
-      type: "audio/m4a",
-    });
-    const res = await fetch(`${API_BASE_URL}/ai/transcribe`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Transcription failed");
-    return data;
-  },
-};
+//   // POST /api/ai/transcribe  (FormData with audio)  → { transcript, structuredRecipe }
+//   transcribeAudio: async (token, audioUri) => {
+//     const formData = new FormData();
+//     formData.append("audio", {
+//       uri: audioUri,
+//       name: "recording.m4a",
+//       type: "audio/m4a",
+//     });
+//     const res = await fetch(`${API_BASE_URL}/ai/transcribe`, {
+//       method: "POST",
+//       headers: { Authorization: `Bearer ${token}` },
+//       body: formData,
+//     });
+//     const data = await res.json();
+//     if (!res.ok) throw new Error(data.message || "Transcription failed");
+//     return data;
+//   },
+// };

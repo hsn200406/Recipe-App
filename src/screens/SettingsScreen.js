@@ -1,5 +1,4 @@
 import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -55,12 +54,6 @@ export default function SettingsScreen() {
   const { theme, dark, toggleDark } = useTheme();
   const { logout, user, token } = useAuth();
   const navigation = useNavigation();
-
-  // const [notifLikes, setNotifLikes] = useState(true);
-  // const [notifComments, setNotifComments] = useState(true);
-  // const [notifFollows, setNotifFollows] = useState(true);
-  // const [notifShares, setNotifShares] = useState(false);
-  const [defaultPublic, setDefaultPublic] = useState(true);
 
   const chevron = <Text style={{ fontSize: 18, color: theme.muted }}>›</Text>;
 
@@ -141,77 +134,6 @@ export default function SettingsScreen() {
           />
           {/* <SettingsRow icon="🔒" label="Change Password"    right={chevron} onPress={() => Alert.alert('Change Password', '🔌 PUT /api/auth/password')} />
           <SettingsRow icon="🔗" label="Connected Accounts" right={chevron} onPress={() => Alert.alert('Connected Accounts', 'Google, Apple Sign-In support via Expo AuthSession.')} last /> */}
-        </SettingsSection>
-
-        {/* Notifications */}
-        {/* <SettingsSection title="NOTIFICATIONS">
-          <SettingsRow
-            icon="❤️"
-            label="Likes"
-            right={
-              <Toggle
-                value={notifLikes}
-                onToggle={() => setNotifLikes((v) => !v)}
-              />
-            }
-          />
-          <SettingsRow
-            icon="💬"
-            label="Comments"
-            right={
-              <Toggle
-                value={notifComments}
-                onToggle={() => setNotifComments((v) => !v)}
-              />
-            }
-          />
-          <SettingsRow
-            icon="👤"
-            label="New Followers"
-            right={
-              <Toggle
-                value={notifFollows}
-                onToggle={() => setNotifFollows((v) => !v)}
-              />
-            }
-          />
-          <SettingsRow
-            icon="↗"
-            label="Recipe Shares"
-            right={
-              <Toggle
-                value={notifShares}
-                onToggle={() => setNotifShares((v) => !v)}
-              />
-            }
-            last
-          />
-        </SettingsSection> */}
-
-        {/* Privacy */}
-        <SettingsSection title="PRIVACY">
-          <SettingsRow
-            icon="🌍"
-            label="Default Recipe Visibility"
-            right={
-              <TouchableOpacity
-                onPress={() => setDefaultPublic((v) => !v)}
-                style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-              >
-                <Text
-                  style={{
-                    color: theme.accent,
-                    fontSize: 13,
-                    fontWeight: "500",
-                  }}
-                >
-                  {defaultPublic ? "Public" : "Private"}
-                </Text>
-                {chevron}
-              </TouchableOpacity>
-            }
-          />
-          {/* <SettingsRow icon="🚫" label="Blocked Users" right={chevron} onPress={() => Alert.alert('Blocked Users', 'No blocked users.')} last /> */}
         </SettingsSection>
 
         {/* About */}

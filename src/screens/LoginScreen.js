@@ -36,9 +36,6 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      // 🔌 API NOTE: Replace with real auth calls from src/context/AuthContext.js
-      // const { login, register } = useAuth();
-      // mode === 'login' ? await login(email, password) : await register(name, handle, email, password)
       if (mode === "login") {
         await login(email, password);
         console.log("Login successful");
@@ -199,14 +196,6 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {mode === "login" && (
-              <TouchableOpacity style={{ alignSelf: "flex-end" }}>
-                <Text style={{ color: theme.accent, fontSize: 13 }}>
-                  Forgot password?
-                </Text>
-              </TouchableOpacity>
-            )}
-
             <TouchableOpacity
               onPress={submit}
               disabled={loading}
@@ -223,48 +212,6 @@ export default function LoginScreen() {
                 </Text>
               )}
             </TouchableOpacity>
-
-            {mode === "login" && (
-              <TouchableOpacity onPress={() => {}} style={ls.guestBtn}>
-                <Text style={[ls.guestText, { color: theme.muted }]}>
-                  Continue as guest →
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Social login hint */}
-          <View style={ls.divider}>
-            <View style={[ls.divLine, { backgroundColor: theme.border }]} />
-            <Text style={[ls.divText, { color: theme.muted }]}>or</Text>
-            <View style={[ls.divLine, { backgroundColor: theme.border }]} />
-          </View>
-          <View style={ls.socialRow}>
-            {[
-              ["🍎", "Apple"],
-              ["🔵", "Google"],
-            ].map(([icon, name]) => (
-              <TouchableOpacity
-                key={name}
-                onPress={() =>
-                  Alert.alert(
-                    `${name} Sign-In`,
-                    "🔌 Implement with expo-auth-session\nnpm install expo-auth-session expo-crypto",
-                  )
-                }
-                style={[
-                  ls.socialBtn,
-                  { backgroundColor: theme.card, borderColor: theme.border },
-                ]}
-              >
-                <Text style={{ fontSize: 18 }}>{icon}</Text>
-                <Text
-                  style={{ color: theme.text, fontSize: 14, fontWeight: "500" }}
-                >
-                  Continue with {name}
-                </Text>
-              </TouchableOpacity>
-            ))}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
