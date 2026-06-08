@@ -1,6 +1,6 @@
 # RecipeSocial
 
-Live app: [LIVE_APP_URL](https://magical-melba-9488ff.netlify.app/) <!-- replace with real URL -->
+Live app: [LIVE_APP_URL](https://recipesocial.netlify.app/) <!-- replace with real URL -->
 
 ## Project Overview
 
