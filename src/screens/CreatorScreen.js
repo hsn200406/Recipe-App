@@ -324,7 +324,9 @@ export default function CreatorScreen() {
               onPress={() => openSocialList("followers")}
             >
               <StatCell
-                value={(displayCreator?.followers?.length || 0).toLocaleString()}
+                value={(
+                  displayCreator?.followers?.length || 0
+                ).toLocaleString()}
                 label="Followers"
                 borderRight
               />
@@ -364,7 +366,7 @@ export default function CreatorScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[
                 s.actionBtn,
                 {
@@ -376,7 +378,7 @@ export default function CreatorScreen() {
               ]}
             >
               <Text style={{ color: theme.text, fontSize: 14 }}>↗ Share</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
 

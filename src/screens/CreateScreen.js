@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import {
   Alert,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -13,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Pill, Toggle } from "../components/SharedComponents";
 import { useAuth } from "../context/AuthContext";
@@ -367,6 +369,47 @@ export default function CreateScreen() {
   const [steps, setSteps] = useState(["", ""]);
   const [showAI, setShowAI] = useState(false);
 
+  const pickRecipeImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow photo access so you can upload a recipe image.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.55,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+
+    if (!asset.base64) {
+      Alert.alert("Image failed", "Please choose a different image.");
+      return;
+    }
+
+    const sizeInMb = (asset.base64.length * 0.75) / 1024 / 1024;
+
+    if (sizeInMb > 5) {
+      Alert.alert(
+        "Image too large",
+        "Please choose a smaller image so the recipe can upload smoothly.",
+      );
+      return;
+    }
+
+    setImageUrl(`data:image/jpeg;base64,${asset.base64}`);
+  };
+
   // const pickVideo = async () => {
   //   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   //   if (status !== "granted") {
@@ -616,16 +659,72 @@ export default function CreateScreen() {
 
                   <View>
                     <Text style={[cr.label, { color: theme.muted }]}>
-                      IMAGE URL
+                      RECIPE PHOTO
                     </Text>
-                    <TextInput
-                      value={imageUrl}
-                      onChangeText={setImageUrl}
-                      placeholder="Paste an image URL for the recipe card"
-                      placeholderTextColor={theme.muted}
-                      autoCapitalize="none"
-                      style={inputStyle}
-                    />
+                    <TouchableOpacity
+                      onPress={pickRecipeImage}
+                      activeOpacity={0.82}
+                      style={[
+                        cr.imagePicker,
+                        {
+                          backgroundColor: theme.card,
+                          borderColor: imageUrl ? theme.accent : theme.border,
+                        },
+                      ]}
+                    >
+                      {imageUrl ? (
+                        <Image
+                          source={{ uri: imageUrl }}
+                          style={cr.imagePreview}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={cr.imageEmpty}>
+                          <Text style={[cr.imageIcon, { color: theme.muted }]}>
+                            +
+                          </Text>
+                          <Text
+                            style={[cr.imageTitle, { color: theme.text }]}
+                          >
+                            Upload a recipe photo
+                          </Text>
+                          <Text
+                            style={[cr.imageHint, { color: theme.muted }]}
+                          >
+                            Choose from files or photos
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+
+                    {imageUrl ? (
+                      <View style={cr.imageActions}>
+                        <TouchableOpacity
+                          onPress={pickRecipeImage}
+                          style={[
+                            cr.imageActionBtn,
+                            { borderColor: theme.border },
+                          ]}
+                        >
+                          <Text
+                            style={{ color: theme.text, fontWeight: "600" }}
+                          >
+                            Change Photo
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => setImageUrl("")}
+                          style={[
+                            cr.imageActionBtn,
+                            { borderColor: "#EF4444" },
+                          ]}
+                        >
+                          <Text style={{ color: "#EF4444", fontWeight: "600" }}>
+                            Remove
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
                   </View>
 
                   <View style={cr.twoCol}>
@@ -1058,6 +1157,53 @@ const cr = StyleSheet.create({
     marginBottom: 6,
   },
   input: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14 },
+  imagePicker: {
+    height: 180,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imagePreview: {
+    width: "100%",
+    height: "100%",
+  },
+  imageEmpty: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 18,
+  },
+  imageIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    textAlign: "center",
+    lineHeight: 42,
+    fontSize: 28,
+    marginBottom: 10,
+  },
+  imageTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  imageHint: {
+    fontSize: 12,
+  },
+  imageActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
+  },
+  imageActionBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
   twoCol: { flexDirection: "row", gap: 12 },
   aiBanner: {
     flexDirection: "row",
