@@ -19,7 +19,7 @@
  */
 
 // 🔌 CHANGE THIS ↓
-export const API_BASE_URL = "http://192.168.0.103:5000/api";
+export const API_BASE_URL = "https://recipesocial-backend.onrender.com/api";
 
 // ── Core fetch helper ─────────────────────────────────────────────────────────
 async function apiFetch(path, token, options = {}) {

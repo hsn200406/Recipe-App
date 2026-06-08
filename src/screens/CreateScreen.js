@@ -490,61 +490,80 @@ export default function CreateScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 20}
         style={{ flex: 1 }}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <TouchableWithoutFeedback
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          disabled={Platform.OS === "web"}
+        >
           <View style={{ flex: 1 }}>
-      {/* <AICaptureModal visible={showAI} onClose={() => setShowAI(false)} /> */}
+            {/* <AICaptureModal visible={showAI} onClose={() => setShowAI(false)} /> */}
 
-      {/* Header */}
-      <View
-        style={[
-          cr.header,
-          { backgroundColor: theme.surface, borderBottomColor: theme.border },
-        ]}
-      >
-        <Text style={[cr.headerTitle, { color: theme.text }]}>New Recipe</Text>
-        {/* Step indicator */}
-        <View style={cr.steps}>
-          {[1, 2, 3, 4].map((n) => (
-            <View key={n} style={cr.stepItem}>
-              <View
-                style={[
-                  cr.stepDot,
-                  { backgroundColor: step >= n ? theme.accent : theme.border },
-                ]}
-              >
-                <Text
-                  style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}
-                >
-                  {n}
-                </Text>
+            {/* Header */}
+            <View
+              style={[
+                cr.header,
+                {
+                  backgroundColor: theme.surface,
+                  borderBottomColor: theme.border,
+                },
+              ]}
+            >
+              <Text style={[cr.headerTitle, { color: theme.text }]}>
+                New Recipe
+              </Text>
+              {/* Step indicator */}
+              <View style={cr.steps}>
+                {[1, 2, 3, 4].map((n) => (
+                  <View key={n} style={cr.stepItem}>
+                    <View
+                      style={[
+                        cr.stepDot,
+                        {
+                          backgroundColor:
+                            step >= n ? theme.accent : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: "#fff",
+                          fontSize: 10,
+                          fontWeight: "700",
+                        }}
+                      >
+                        {n}
+                      </Text>
+                    </View>
+                    {n < 4 && (
+                      <View
+                        style={[
+                          cr.stepLine,
+                          {
+                            backgroundColor:
+                              step > n ? theme.accent : theme.border,
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                ))}
               </View>
-              {n < 4 && (
-                <View
-                  style={[
-                    cr.stepLine,
-                    { backgroundColor: step > n ? theme.accent : theme.border },
-                  ]}
-                />
-              )}
+              <Text style={[cr.stepLabel, { color: theme.muted }]}>
+                {["Details", "Ingredients", "Steps", "Publish"][step - 1]}
+              </Text>
             </View>
-          ))}
-        </View>
-        <Text style={[cr.stepLabel, { color: theme.muted }]}>
-          {["Details", "Ingredients", "Steps", "Publish"][step - 1]}
-        </Text>
-      </View>
 
-      <ScrollView
-        contentContainerStyle={cr.scroll}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        {/* STEP 1: Details */}
-        {step === 1 && (
-          <View style={{ gap: 16 }}>
-            {/* AI Banner */}
-            {/* <TouchableOpacity onPress={() => setShowAI(true)}
+            <ScrollView
+              contentContainerStyle={cr.scroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
+              {/* STEP 1: Details */}
+              {step === 1 && (
+                <View style={{ gap: 16 }}>
+                  {/* AI Banner */}
+                  {/* <TouchableOpacity onPress={() => setShowAI(true)}
               style={[cr.aiBanner, { backgroundColor: theme.dark ? '#1a0a2e' : '#f0ebff', borderColor: '#7C3AED44' }]}
             >
               <Text style={{ fontSize: 28 }}>🤖</Text>
@@ -560,138 +579,152 @@ export default function CreateScreen() {
               <Text style={{ color: theme.muted, fontSize: 18 }}>→</Text>
             </TouchableOpacity> */}
 
-            <View>
-              <Text style={[cr.label, { color: theme.muted }]}>
-                RECIPE TITLE *
-              </Text>
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder="e.g. Nonna's Tomato Sauce"
-                placeholderTextColor={theme.muted}
-                style={inputStyle}
-              />
-            </View>
-
-            <View>
-              <Text style={[cr.label, { color: theme.muted }]}>
-                DESCRIPTION
-              </Text>
-              <TextInput
-                value={desc}
-                onChangeText={setDesc}
-                placeholder="A short description of your recipe…"
-                placeholderTextColor={theme.muted}
-                multiline
-                numberOfLines={3}
-                style={[
-                  inputStyle,
-                  { minHeight: 80, textAlignVertical: "top", lineHeight: 20 },
-                ]}
-              />
-            </View>
-
-            <View>
-              <Text style={[cr.label, { color: theme.muted }]}>IMAGE URL</Text>
-              <TextInput
-                value={imageUrl}
-                onChangeText={setImageUrl}
-                placeholder="Paste an image URL for the recipe card"
-                placeholderTextColor={theme.muted}
-                autoCapitalize="none"
-                style={inputStyle}
-              />
-            </View>
-
-            <View style={cr.twoCol}>
-              <View style={{ flex: 1 }}>
-                <Text style={[cr.label, { color: theme.muted }]}>
-                  MEAL TYPE
-                </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {MEALS.filter((m) => m !== "All").map((m) => (
-                    <View key={m} style={{ marginRight: 6 }}>
-                      <Pill
-                        active={meal === m}
-                        onPress={() => setMeal(m)}
-                        small
-                      >
-                        {m}
-                      </Pill>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
-
-            <View>
-              <Text style={[cr.label, { color: theme.muted }]}>CUISINE</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {CUISINES.filter((c) => c !== "All").map((c) => (
-                  <View key={c} style={{ marginRight: 6 }}>
-                    <Pill
-                      active={cuisine === c}
-                      onPress={() => setCuisine(c)}
-                      small
-                    >
-                      {c}
-                    </Pill>
+                  <View>
+                    <Text style={[cr.label, { color: theme.muted }]}>
+                      RECIPE TITLE *
+                    </Text>
+                    <TextInput
+                      value={title}
+                      onChangeText={setTitle}
+                      placeholder="e.g. Nonna's Tomato Sauce"
+                      placeholderTextColor={theme.muted}
+                      style={inputStyle}
+                    />
                   </View>
-                ))}
-              </ScrollView>
-            </View>
 
-            <View>
-              <Text style={[cr.label, { color: theme.muted }]}>TIME</Text>
-              <TextInput
-                value={time}
-                onChangeText={setTime}
-                placeholder="e.g. 30 min"
-                placeholderTextColor={theme.muted}
-                style={inputStyle}
-              />
-            </View>
+                  <View>
+                    <Text style={[cr.label, { color: theme.muted }]}>
+                      DESCRIPTION
+                    </Text>
+                    <TextInput
+                      value={desc}
+                      onChangeText={setDesc}
+                      placeholder="A short description of your recipe…"
+                      placeholderTextColor={theme.muted}
+                      multiline
+                      numberOfLines={3}
+                      style={[
+                        inputStyle,
+                        {
+                          minHeight: 80,
+                          textAlignVertical: "top",
+                          lineHeight: 20,
+                        },
+                      ]}
+                    />
+                  </View>
 
-            <View style={cr.twoCol}>
-              <TextInput
-                value={calories}
-                onChangeText={setCalories}
-                placeholder="Calories"
-                placeholderTextColor={theme.muted}
-                keyboardType="numeric"
-                style={[inputStyle, { flex: 1 }]}
-              />
-              <TextInput
-                value={protein}
-                onChangeText={setProtein}
-                placeholder="Protein"
-                placeholderTextColor={theme.muted}
-                keyboardType="numeric"
-                style={[inputStyle, { flex: 1 }]}
-              />
-            </View>
+                  <View>
+                    <Text style={[cr.label, { color: theme.muted }]}>
+                      IMAGE URL
+                    </Text>
+                    <TextInput
+                      value={imageUrl}
+                      onChangeText={setImageUrl}
+                      placeholder="Paste an image URL for the recipe card"
+                      placeholderTextColor={theme.muted}
+                      autoCapitalize="none"
+                      style={inputStyle}
+                    />
+                  </View>
 
-            <View style={cr.twoCol}>
-              <TextInput
-                value={carbs}
-                onChangeText={setCarbs}
-                placeholder="Carbs"
-                placeholderTextColor={theme.muted}
-                keyboardType="numeric"
-                style={[inputStyle, { flex: 1 }]}
-              />
-              <TextInput
-                value={fat}
-                onChangeText={setFat}
-                placeholder="Fat"
-                placeholderTextColor={theme.muted}
-                keyboardType="numeric"
-                style={[inputStyle, { flex: 1 }]}
-              />
-            </View>
+                  <View style={cr.twoCol}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[cr.label, { color: theme.muted }]}>
+                        MEAL TYPE
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                      >
+                        {MEALS.filter((m) => m !== "All").map((m) => (
+                          <View key={m} style={{ marginRight: 6 }}>
+                            <Pill
+                              active={meal === m}
+                              onPress={() => setMeal(m)}
+                              small
+                            >
+                              {m}
+                            </Pill>
+                          </View>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  </View>
 
-            {/* Video upload */}
-            {/* <View>
+                  <View>
+                    <Text style={[cr.label, { color: theme.muted }]}>
+                      CUISINE
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    >
+                      {CUISINES.filter((c) => c !== "All").map((c) => (
+                        <View key={c} style={{ marginRight: 6 }}>
+                          <Pill
+                            active={cuisine === c}
+                            onPress={() => setCuisine(c)}
+                            small
+                          >
+                            {c}
+                          </Pill>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </View>
+
+                  <View>
+                    <Text style={[cr.label, { color: theme.muted }]}>TIME</Text>
+                    <TextInput
+                      value={time}
+                      onChangeText={setTime}
+                      placeholder="e.g. 30 min"
+                      placeholderTextColor={theme.muted}
+                      style={inputStyle}
+                    />
+                  </View>
+
+                  <View style={cr.twoCol}>
+                    <TextInput
+                      value={calories}
+                      onChangeText={setCalories}
+                      placeholder="Calories"
+                      placeholderTextColor={theme.muted}
+                      keyboardType="numeric"
+                      style={[inputStyle, { flex: 1 }]}
+                    />
+                    <TextInput
+                      value={protein}
+                      onChangeText={setProtein}
+                      placeholder="Protein"
+                      placeholderTextColor={theme.muted}
+                      keyboardType="numeric"
+                      style={[inputStyle, { flex: 1 }]}
+                    />
+                  </View>
+
+                  <View style={cr.twoCol}>
+                    <TextInput
+                      value={carbs}
+                      onChangeText={setCarbs}
+                      placeholder="Carbs"
+                      placeholderTextColor={theme.muted}
+                      keyboardType="numeric"
+                      style={[inputStyle, { flex: 1 }]}
+                    />
+                    <TextInput
+                      value={fat}
+                      onChangeText={setFat}
+                      placeholder="Fat"
+                      placeholderTextColor={theme.muted}
+                      keyboardType="numeric"
+                      style={[inputStyle, { flex: 1 }]}
+                    />
+                  </View>
+
+                  {/* Video upload */}
+                  {/* <View>
               <Text style={[cr.label, { color: theme.muted }]}>
                 RECIPE VIDEO (OPTIONAL)
               </Text>
@@ -730,232 +763,265 @@ export default function CreateScreen() {
               </TouchableOpacity>
             </View> */}
 
-            {/* Visibility */}
-            <View
-              style={[
-                cr.visibilityRow,
-                { backgroundColor: theme.card, borderColor: theme.border },
-              ]}
-            >
-              <View>
-                <Text style={[cr.visTitle, { color: theme.text }]}>
-                  {isPublic ? "🌍 Public" : "🔒 Private"}
-                </Text>
-                <Text style={[cr.visDesc, { color: theme.muted }]}>
-                  {isPublic
-                    ? "Anyone can discover this recipe"
-                    : "Only you can see this"}
-                </Text>
-              </View>
-              <Toggle
-                value={isPublic}
-                onToggle={() => setIsPublic((p) => !p)}
-              />
-            </View>
+                  {/* Visibility */}
+                  <View
+                    style={[
+                      cr.visibilityRow,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <View>
+                      <Text style={[cr.visTitle, { color: theme.text }]}>
+                        {isPublic ? "🌍 Public" : "🔒 Private"}
+                      </Text>
+                      <Text style={[cr.visDesc, { color: theme.muted }]}>
+                        {isPublic
+                          ? "Anyone can discover this recipe"
+                          : "Only you can see this"}
+                      </Text>
+                    </View>
+                    <Toggle
+                      value={isPublic}
+                      onToggle={() => setIsPublic((p) => !p)}
+                    />
+                  </View>
 
-            <TouchableOpacity
-              onPress={() => {
-                if (!title.trim()) {
-                  Alert.alert("Title required", "Please enter a recipe title.");
-                  return;
-                }
-                setStep(2);
-              }}
-              style={[cr.nextBtn, { backgroundColor: theme.accent }]}
-            >
-              <Text style={cr.nextBtnText}>Continue → Add Ingredients</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* STEP 2: Ingredients */}
-        {step === 2 && (
-          <View style={{ gap: 12 }}>
-            <Text style={[cr.stepHeading, { color: theme.text }]}>
-              Ingredients
-            </Text>
-            <Text style={[cr.stepHint, { color: theme.muted }]}>
-              Add your ingredients with quantities.
-            </Text>
-            {ingredients.map((ing, i) => (
-              <View key={i} style={cr.ingRow}>
-                <TextInput
-                  value={ing.qty}
-                  onChangeText={(v) => updateIngredient(i, "qty", v)}
-                  placeholder="Qty"
-                  placeholderTextColor={theme.muted}
-                  style={[inputStyle, cr.qtyInput]}
-                />
-                <TextInput
-                  value={ing.name}
-                  onChangeText={(v) => updateIngredient(i, "name", v)}
-                  placeholder={`Ingredient ${i + 1}`}
-                  placeholderTextColor={theme.muted}
-                  style={[inputStyle, { flex: 1 }]}
-                />
-                {ingredients.length > 1 && (
                   <TouchableOpacity
-                    onPress={() =>
-                      setIngredients((arr) => arr.filter((_, idx) => idx !== i))
-                    }
+                    onPress={() => {
+                      if (!title.trim()) {
+                        Alert.alert(
+                          "Title required",
+                          "Please enter a recipe title.",
+                        );
+                        return;
+                      }
+                      setStep(2);
+                    }}
+                    style={[cr.nextBtn, { backgroundColor: theme.accent }]}
                   >
-                    <Text style={{ color: theme.muted, fontSize: 20 }}>×</Text>
+                    <Text style={cr.nextBtnText}>
+                      Continue → Add Ingredients
+                    </Text>
                   </TouchableOpacity>
-                )}
-              </View>
-            ))}
-            <TouchableOpacity
-              onPress={() =>
-                setIngredients((arr) => [...arr, { qty: "", name: "" }])
-              }
-              style={[cr.addRowBtn, { borderColor: theme.border }]}
-            >
-              <Text style={{ color: theme.accent, fontWeight: "600" }}>
-                + Add Ingredient
-              </Text>
-            </TouchableOpacity>
-            <View style={cr.navBtns}>
-              <TouchableOpacity
-                onPress={() => setStep(1)}
-                style={[cr.backBtn2, { borderColor: theme.border }]}
-              >
-                <Text style={{ color: theme.text, fontWeight: "600" }}>
-                  ← Back
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setStep(3)}
-                style={[cr.nextBtn, { backgroundColor: theme.accent, flex: 1 }]}
-              >
-                <Text style={cr.nextBtnText}>Continue → Add Steps</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* STEP 3: Steps */}
-        {step === 3 && (
-          <View style={{ gap: 12 }}>
-            <Text style={[cr.stepHeading, { color: theme.text }]}>
-              Instructions
-            </Text>
-            <Text style={[cr.stepHint, { color: theme.muted }]}>
-              Add your step-by-step cooking instructions.
-            </Text>
-            {steps.map((step_text, i) => (
-              <View key={i} style={cr.stepRow}>
-                <View
-                  style={[cr.stepNumCircle, { backgroundColor: theme.accent }]}
-                >
-                  <Text
-                    style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}
-                  >
-                    {i + 1}
-                  </Text>
                 </View>
-                <TextInput
-                  value={step_text}
-                  onChangeText={(v) => updateStep(i, v)}
-                  placeholder={`Step ${i + 1}…`}
-                  placeholderTextColor={theme.muted}
-                  multiline
-                  style={[
-                    inputStyle,
-                    { flex: 1, textAlignVertical: "top", lineHeight: 20 },
-                  ]}
-                />
-                {steps.length > 1 && (
+              )}
+
+              {/* STEP 2: Ingredients */}
+              {step === 2 && (
+                <View style={{ gap: 12 }}>
+                  <Text style={[cr.stepHeading, { color: theme.text }]}>
+                    Ingredients
+                  </Text>
+                  <Text style={[cr.stepHint, { color: theme.muted }]}>
+                    Add your ingredients with quantities.
+                  </Text>
+                  {ingredients.map((ing, i) => (
+                    <View key={i} style={cr.ingRow}>
+                      <TextInput
+                        value={ing.qty}
+                        onChangeText={(v) => updateIngredient(i, "qty", v)}
+                        placeholder="Qty"
+                        placeholderTextColor={theme.muted}
+                        style={[inputStyle, cr.qtyInput]}
+                      />
+                      <TextInput
+                        value={ing.name}
+                        onChangeText={(v) => updateIngredient(i, "name", v)}
+                        placeholder={`Ingredient ${i + 1}`}
+                        placeholderTextColor={theme.muted}
+                        style={[inputStyle, { flex: 1 }]}
+                      />
+                      {ingredients.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() =>
+                            setIngredients((arr) =>
+                              arr.filter((_, idx) => idx !== i),
+                            )
+                          }
+                        >
+                          <Text style={{ color: theme.muted, fontSize: 20 }}>
+                            ×
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
                   <TouchableOpacity
                     onPress={() =>
-                      setSteps((arr) => arr.filter((_, idx) => idx !== i))
+                      setIngredients((arr) => [...arr, { qty: "", name: "" }])
                     }
+                    style={[cr.addRowBtn, { borderColor: theme.border }]}
                   >
-                    <Text style={{ color: theme.muted, fontSize: 20 }}>×</Text>
+                    <Text style={{ color: theme.accent, fontWeight: "600" }}>
+                      + Add Ingredient
+                    </Text>
                   </TouchableOpacity>
-                )}
-              </View>
-            ))}
-            <TouchableOpacity
-              onPress={() => setSteps((arr) => [...arr, ""])}
-              style={[cr.addRowBtn, { borderColor: theme.border }]}
-            >
-              <Text style={{ color: theme.accent, fontWeight: "600" }}>
-                + Add Step
-              </Text>
-            </TouchableOpacity>
-            <View style={cr.navBtns}>
-              <TouchableOpacity
-                onPress={() => setStep(2)}
-                style={[cr.backBtn2, { borderColor: theme.border }]}
-              >
-                <Text style={{ color: theme.text, fontWeight: "600" }}>
-                  ← Back
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setStep(4)}
-                style={[cr.nextBtn, { backgroundColor: theme.accent, flex: 1 }]}
-              >
-                <Text style={cr.nextBtnText}>Continue → Review</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+                  <View style={cr.navBtns}>
+                    <TouchableOpacity
+                      onPress={() => setStep(1)}
+                      style={[cr.backBtn2, { borderColor: theme.border }]}
+                    >
+                      <Text style={{ color: theme.text, fontWeight: "600" }}>
+                        ← Back
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setStep(3)}
+                      style={[
+                        cr.nextBtn,
+                        { backgroundColor: theme.accent, flex: 1 },
+                      ]}
+                    >
+                      <Text style={cr.nextBtnText}>Continue → Add Steps</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
-        {/* STEP 4: Review & Publish */}
-        {step === 4 && (
-          <View style={{ gap: 16 }}>
-            <Text style={[cr.stepHeading, { color: theme.text }]}>
-              Review & Publish
-            </Text>
-            {/* Summary */}
-            <View
-              style={[
-                cr.summaryCard,
-                { backgroundColor: theme.card, borderColor: theme.border },
-              ]}
-            >
-              <Text style={[cr.summaryTitle, { color: theme.text }]}>
-                {title || "Untitled Recipe"}
-              </Text>
-              <Text style={[cr.summaryMeta, { color: theme.muted }]}>
-                {[meal, cuisine, isPublic ? "Public" : "Private"]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </Text>
-              {desc ? (
-                <Text style={[cr.summaryDesc, { color: theme.subtext }]}>
-                  {desc}
-                </Text>
-              ) : null}
-              <Text style={[cr.summaryStat, { color: theme.muted }]}>
-                {ingredients.filter((i) => i.name).length} ingredients ·{" "}
-                {steps.filter((s) => s).length} steps
-                {/* {videoFile ? " · 🎬 Video included" : ""} */}
-              </Text>
-            </View>
-            <View style={cr.navBtns}>
-              <TouchableOpacity
-                onPress={() => setStep(3)}
-                style={[cr.backBtn2, { borderColor: theme.border }]}
-              >
-                <Text style={{ color: theme.text, fontWeight: "600" }}>
-                  ← Back
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                disabled={publishing}
-                onPress={publish}
-                style={[cr.nextBtn, { backgroundColor: theme.accent, flex: 1 }]}
-              >
-                <Text style={cr.nextBtnText}>
-                  {publishing ? "Publishing..." : "Publish Recipe"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </ScrollView>
+              {/* STEP 3: Steps */}
+              {step === 3 && (
+                <View style={{ gap: 12 }}>
+                  <Text style={[cr.stepHeading, { color: theme.text }]}>
+                    Instructions
+                  </Text>
+                  <Text style={[cr.stepHint, { color: theme.muted }]}>
+                    Add your step-by-step cooking instructions.
+                  </Text>
+                  {steps.map((step_text, i) => (
+                    <View key={i} style={cr.stepRow}>
+                      <View
+                        style={[
+                          cr.stepNumCircle,
+                          { backgroundColor: theme.accent },
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            color: "#fff",
+                            fontSize: 12,
+                            fontWeight: "700",
+                          }}
+                        >
+                          {i + 1}
+                        </Text>
+                      </View>
+                      <TextInput
+                        value={step_text}
+                        onChangeText={(v) => updateStep(i, v)}
+                        placeholder={`Step ${i + 1}…`}
+                        placeholderTextColor={theme.muted}
+                        multiline
+                        style={[
+                          inputStyle,
+                          { flex: 1, textAlignVertical: "top", lineHeight: 20 },
+                        ]}
+                      />
+                      {steps.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() =>
+                            setSteps((arr) => arr.filter((_, idx) => idx !== i))
+                          }
+                        >
+                          <Text style={{ color: theme.muted, fontSize: 20 }}>
+                            ×
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                  <TouchableOpacity
+                    onPress={() => setSteps((arr) => [...arr, ""])}
+                    style={[cr.addRowBtn, { borderColor: theme.border }]}
+                  >
+                    <Text style={{ color: theme.accent, fontWeight: "600" }}>
+                      + Add Step
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={cr.navBtns}>
+                    <TouchableOpacity
+                      onPress={() => setStep(2)}
+                      style={[cr.backBtn2, { borderColor: theme.border }]}
+                    >
+                      <Text style={{ color: theme.text, fontWeight: "600" }}>
+                        ← Back
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setStep(4)}
+                      style={[
+                        cr.nextBtn,
+                        { backgroundColor: theme.accent, flex: 1 },
+                      ]}
+                    >
+                      <Text style={cr.nextBtnText}>Continue → Review</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* STEP 4: Review & Publish */}
+              {step === 4 && (
+                <View style={{ gap: 16 }}>
+                  <Text style={[cr.stepHeading, { color: theme.text }]}>
+                    Review & Publish
+                  </Text>
+                  {/* Summary */}
+                  <View
+                    style={[
+                      cr.summaryCard,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[cr.summaryTitle, { color: theme.text }]}>
+                      {title || "Untitled Recipe"}
+                    </Text>
+                    <Text style={[cr.summaryMeta, { color: theme.muted }]}>
+                      {[meal, cuisine, isPublic ? "Public" : "Private"]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                    {desc ? (
+                      <Text style={[cr.summaryDesc, { color: theme.subtext }]}>
+                        {desc}
+                      </Text>
+                    ) : null}
+                    <Text style={[cr.summaryStat, { color: theme.muted }]}>
+                      {ingredients.filter((i) => i.name).length} ingredients ·{" "}
+                      {steps.filter((s) => s).length} steps
+                      {/* {videoFile ? " · 🎬 Video included" : ""} */}
+                    </Text>
+                  </View>
+                  <View style={cr.navBtns}>
+                    <TouchableOpacity
+                      onPress={() => setStep(3)}
+                      style={[cr.backBtn2, { borderColor: theme.border }]}
+                    >
+                      <Text style={{ color: theme.text, fontWeight: "600" }}>
+                        ← Back
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      disabled={publishing}
+                      onPress={publish}
+                      style={[
+                        cr.nextBtn,
+                        { backgroundColor: theme.accent, flex: 1 },
+                      ]}
+                    >
+                      <Text style={cr.nextBtnText}>
+                        {publishing ? "Publishing..." : "Publish Recipe"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -1056,8 +1122,4 @@ const cr = StyleSheet.create({
   summaryMeta: { fontSize: 13 },
   summaryDesc: { fontSize: 13, lineHeight: 20 },
   summaryStat: { fontSize: 12, marginTop: 4 },
-  subtext: "#AAAAAA",
 });
-
-
-

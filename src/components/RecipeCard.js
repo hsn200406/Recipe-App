@@ -105,7 +105,8 @@ function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
           </Text>
         </View>
         <TouchableOpacity
-          onPress={async () => {
+          onPress={async (event) => {
+            event?.stopPropagation?.();
             setSaved((s) => !s);
             await toggleSave(recipeId);
           }}
@@ -133,7 +134,10 @@ function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
         <View style={styles.creatorRow}>
           <TouchableOpacity
             style={styles.creatorLeft}
-            onPress={() => navigation.navigate("Creator", { creator })}
+            onPress={(event) => {
+              event?.stopPropagation?.();
+              navigation.navigate("Creator", { creator });
+            }}
           >
             <Avatar
               initial={creator.initial || creator.name?.charAt(0) || "?"}
@@ -146,7 +150,8 @@ function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
           </TouchableOpacity>
           {!isOwnRecipe && (
             <TouchableOpacity
-              onPress={async () => {
+              onPress={async (event) => {
+                event?.stopPropagation?.();
                 setIsFollowed((v) => !v);
                 await onToggleFollow?.(creatorId);
               }}
@@ -230,7 +235,8 @@ function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
           </View>
           <View style={styles.actionRow}>
             <TouchableOpacity
-              onPress={async () => {
+              onPress={async (event) => {
+                event?.stopPropagation?.();
                 const nextLiked = !liked;
 
                 setLiked(nextLiked);

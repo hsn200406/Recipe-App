@@ -2,6 +2,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -27,6 +28,7 @@ export default function HomeScreen() {
   const [animating, setAnimating] = useState(false);
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { user, token, toggleFollow } = useAuth();
   const followedCreators = user?.following || [];
   const followedKey = followedCreators.join(",");
@@ -65,6 +67,12 @@ export default function HomeScreen() {
       setLoading(false);
     }
   }, [token, followedKey]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadFeed();
+    setRefreshing(false);
+  }, [loadFeed]);
 
   useFocusEffect(
     useCallback(() => {
@@ -171,6 +179,14 @@ export default function HomeScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.accent}
+              colors={[theme.accent]}
+            />
+          }
         >
           {/* AI Capture Banner */}
           {/* <TouchableOpacity

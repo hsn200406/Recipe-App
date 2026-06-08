@@ -9,13 +9,21 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yourname.recipesocial"
+      "bundleIdentifier": "com.yourname.recipesocial",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.yourname.recipesocial",
       "adaptiveIcon": {
         "backgroundColor": "#0D0D0D"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [
       [
@@ -39,6 +47,11 @@
       ],
       "expo-secure-store",
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0c407f94-98f9-4f18-8d56-81ff1fb53604"
+      }
+    }
   }
 }

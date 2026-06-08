@@ -1,5 +1,6 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AuthProvider } from "./src/context/AuthContext";
@@ -14,9 +15,11 @@ function AppInner() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style={dark ? "light" : "dark"} />
 
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
+      <View style={styles.appShell}>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </View>
     </GestureHandlerRootView>
   );
 }
@@ -30,3 +33,12 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  appShell: {
+    flex: 1,
+    width: "100%",
+    maxWidth: Platform.OS === "web" ? 520 : undefined,
+    alignSelf: "center",
+  },
+});

@@ -1,9 +1,40 @@
-import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
+
 import { API_BASE_URL } from "../services/api";
+
+const SecureStore = Platform.OS === "web" ? null : require("expo-secure-store");
 
 const AuthContext = createContext(null);
 
+const storage = {
+  getItem: async (key) => {
+    if (Platform.OS === "web") {
+      return typeof window !== "undefined"
+        ? window.localStorage.getItem(key)
+        : null;
+    }
+
+    return SecureStore.getItemAsync(key);
+  },
+  setItem: async (key, value) => {
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined")
+        window.localStorage.setItem(key, value);
+      return;
+    }
+
+    return SecureStore.setItemAsync(key, value);
+  },
+  deleteItem: async (key) => {
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined") window.localStorage.removeItem(key);
+      return;
+    }
+
+    return SecureStore.deleteItemAsync(key);
+  },
+};
 const defaultUser = {
   id: null,
   name: "",
@@ -22,8 +53,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const storedToken = await SecureStore.getItemAsync("jwt");
-        const storedUser = await SecureStore.getItemAsync("user");
+        const storedToken = await storage.getItem("jwt");
+        const storedUser = await storage.getItem("user");
 
         if (storedToken && storedUser) {
           const parsed = JSON.parse(storedUser);
@@ -47,8 +78,8 @@ export function AuthProvider({ children }) {
 
   // ── Helpers ──────────────────────────────────────────────────────────
   const _save = async (tok, usr) => {
-    await SecureStore.setItemAsync("jwt", tok);
-    await SecureStore.setItemAsync("user", JSON.stringify(usr));
+    await storage.setItem("jwt", tok);
+    await storage.setItem("user", JSON.stringify(usr));
 
     setToken(tok);
     setUser({
@@ -61,8 +92,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await SecureStore.deleteItemAsync("jwt");
-    await SecureStore.deleteItemAsync("user");
+    await storage.deleteItem("jwt");
+    await storage.deleteItem("user");
 
     setToken(null);
     setUser(defaultUser);
@@ -119,7 +150,7 @@ export function AuthProvider({ children }) {
           likedRecipes: data.likedRecipes,
         };
 
-        SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+        storage.setItem("user", JSON.stringify(updatedUser));
         return updatedUser;
       });
 
@@ -149,7 +180,7 @@ export function AuthProvider({ children }) {
           savedRecipes: data.savedRecipes,
         };
 
-        SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+        storage.setItem("user", JSON.stringify(updatedUser));
         return updatedUser;
       });
 
@@ -181,7 +212,7 @@ export function AuthProvider({ children }) {
           following: data.following || [],
         };
 
-        SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+        storage.setItem("user", JSON.stringify(updatedUser));
         return updatedUser;
       });
 
@@ -192,7 +223,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateCurrentUser = async (updatedUser) => {
-    await SecureStore.setItemAsync("user", JSON.stringify(updatedUser));
+    await storage.setItem("user", JSON.stringify(updatedUser));
 
     setUser({
       ...defaultUser,
@@ -224,3 +255,6 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+
+
+

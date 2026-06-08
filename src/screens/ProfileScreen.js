@@ -3,6 +3,8 @@ import { useCallback, useState } from "react";
 import {
   Alert,
   Image,
+  Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,6 +27,7 @@ export default function ProfileScreen() {
   const [myRecipes, setMyRecipes] = useState([]);
   const [likedRecipes, setLikedRecipes] = useState([]);
   const [savedRecipes, setSavedRecipes] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchMyRecipes = async () => {
     const res = await fetch(`${API_BASE_URL}/recipes/me`, {
@@ -73,11 +76,33 @@ export default function ProfileScreen() {
     }, [loadProfile]),
   );
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  }, [loadProfile]);
+
   const displayUser = profile || user || {};
   const initial = displayUser.name?.charAt(0)?.toUpperCase() || "?";
   const recipeCount = myRecipes.length;
   const followerCount = displayUser.followers?.length || 0;
   const followingCount = displayUser.following?.length || 0;
+
+  const confirmAction = (title, message, onConfirm) => {
+    if (Platform.OS === "web") {
+      if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+      return;
+    }
+
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: title.includes("Delete") ? "Delete" : "Log Out",
+        style: "destructive",
+        onPress: onConfirm,
+      },
+    ]);
+  };
 
   const openRecipe = (recipe) => {
     const recipeId = recipe._id || recipe.id;
@@ -94,27 +119,16 @@ export default function ProfileScreen() {
   const deleteRecipe = (recipe) => {
     const recipeId = recipe._id || recipe.id;
 
-    Alert.alert(
-      "Delete recipe?",
-      "Are you sure you want to delete this recipe?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await recipeAPI.delete(token, recipeId);
-              setMyRecipes((prev) =>
-                prev.filter((item) => (item._id || item.id) !== recipeId),
-              );
-            } catch (err) {
-              Alert.alert("Delete failed", err.message);
-            }
-          },
-        },
-      ],
-    );
+    confirmAction("Delete recipe?", "Are you sure you want to delete this recipe?", async () => {
+      try {
+        await recipeAPI.delete(token, recipeId);
+        setMyRecipes((prev) =>
+          prev.filter((item) => (item._id || item.id) !== recipeId),
+        );
+      } catch (err) {
+        Alert.alert("Delete failed", err.message);
+      }
+    });
   };
 
   const recipesToShow =
@@ -129,6 +143,14 @@ export default function ProfileScreen() {
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
+          />
+        }
       >
         <View
           style={[
@@ -222,16 +244,9 @@ export default function ProfileScreen() {
                 { backgroundColor: theme.card, borderColor: theme.border },
               ]}
               onPress={() =>
-                Alert.alert("Log Out", "Are you sure you want to log out?", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Log Out",
-                    style: "destructive",
-                    onPress: async () => {
-                      await logout();
-                    },
-                  },
-                ])
+                confirmAction("Log Out", "Are you sure you want to log out?", async () => {
+                  await logout();
+                })
               }
             >
               <Text style={[s.editBtnText, { color: theme.text }]}>
@@ -347,7 +362,10 @@ export default function ProfileScreen() {
                 <View style={s.recipeActions}>
                   {activeTab === "recipes" && (
                     <TouchableOpacity
-                      onPress={() => deleteRecipe(recipe)}
+                      onPress={(event) => {
+                        event?.stopPropagation?.();
+                        deleteRecipe(recipe);
+                      }}
                       style={[s.deleteRecipeBtn, { borderColor: "#EF4444" }]}
                     >
                       <Text style={s.deleteRecipeText}>Delete</Text>

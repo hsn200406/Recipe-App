@@ -2,6 +2,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
   Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,21 +22,29 @@ export default function SavedScreen() {
   const { token, toggleSave } = useAuth();
   const [savedRecipes, setSavedRecipes] = useState([]);
 
+  const loadSaved = useCallback(async () => {
+    try {
+      const data = await recipeAPI.getSaved(token);
+      setSavedRecipes(data || []);
+    } catch (err) {
+      console.log("Saved recipes error:", err.message);
+    }
+  }, [token]);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadSaved();
+    setRefreshing(false);
+  }, [loadSaved]);
+
   useFocusEffect(
     useCallback(() => {
-      const loadSaved = async () => {
-        try {
-          const data = await recipeAPI.getSaved(token);
-          setSavedRecipes(data || []);
-        } catch (err) {
-          console.log("Saved recipes error:", err.message);
-        }
-      };
-
       if (token) {
         loadSaved();
       }
-    }, [token]),
+    }, [token, loadSaved]),
   );
 
   return (
@@ -55,6 +64,14 @@ export default function SavedScreen() {
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
+          />
+        }
       >
         {savedRecipes.length === 0 ? (
           <View style={s.empty}>

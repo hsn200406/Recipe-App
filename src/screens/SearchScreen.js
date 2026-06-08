@@ -1,9 +1,10 @@
 import { useNavigation } from "@react-navigation/native";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
   Keyboard,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -46,6 +47,7 @@ export default function SearchScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const activeFilters = [
     cuisine !== "All",
@@ -68,22 +70,30 @@ export default function SearchScreen() {
     return params;
   }, [query, cuisine, meal, protein, carbs, fat]);
 
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      try {
-        setLoading(true);
+  const runSearch = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        const data = await recipeAPI.search(token, searchParams);
-        setResults(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.log("Search error:", err.message);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
+      const data = await recipeAPI.search(token, searchParams);
+      setResults(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.log("Search error:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, searchParams]);
+
+  useEffect(() => {
+    const timer = setTimeout(runSearch, 300);
 
     return () => clearTimeout(timer);
-  }, [token, searchParams]);
+  }, [runSearch]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await runSearch();
+    setRefreshing(false);
+  }, [runSearch]);
 
   const clearAll = () => {
     setQuery("");
@@ -189,6 +199,14 @@ export default function SearchScreen() {
         contentContainerStyle={sf.scroll}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
+          />
+        }
       >
         {showFilters && (
           <View

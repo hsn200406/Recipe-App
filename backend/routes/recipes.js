@@ -4,6 +4,10 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const Recipe = require("../models/Recipe");
 const User = require("../models/User");
+const {
+  getRatingSummary,
+  hasUserReviewed,
+} = require("../utils/recipeRatings");
 
 // Routes:
 // GET    /api/recipes              Public recipe feed
@@ -517,6 +521,12 @@ router.post("/:id/reviews", auth, async (req, res) => {
       return res.status(404).json({ message: "Recipe not found" });
     }
 
+    if (hasUserReviewed(recipe.reviews, req.userId)) {
+      return res
+        .status(400)
+        .json({ message: "You have already reviewed this recipe" });
+    }
+
     recipe.reviews.push({
       userId: user._id,
       user: user.handle,
@@ -524,14 +534,10 @@ router.post("/:id/reviews", auth, async (req, res) => {
       text: text ?? "",
     });
 
-    recipe.ratingCount = recipe.reviews.length;
-    recipe.commentCount = recipe.reviews.length;
-
-    const totalRating = recipe.reviews.reduce(
-      (sum, review) => sum + review.rating,
-      0,
-    );
-    recipe.rating = totalRating / recipe.ratingCount;
+    const summary = getRatingSummary(recipe.reviews);
+    recipe.rating = summary.rating;
+    recipe.ratingCount = summary.ratingCount;
+    recipe.commentCount = summary.commentCount;
 
     await recipe.save();
 

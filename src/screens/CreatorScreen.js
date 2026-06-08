@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,28 +23,35 @@ export default function CreatorScreen() {
 
   const [creatorProfile, setCreatorProfile] = useState(creator);
   const [theirRecipes, setTheirRecipes] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
   const creatorId = creator?._id || creator?.id;
   const currentUserId = user?._id || user?.id;
   const isOwnProfile = creatorId === currentUserId;
   const isFollowed = user?.following?.includes(creatorId);
 
-  useEffect(() => {
-    const loadCreator = async () => {
-      try {
-        if (!creator?.handle || !creatorId) return;
+  const loadCreator = useCallback(async () => {
+    try {
+      if (!creator?.handle || !creatorId) return;
 
-        const freshCreator = await userAPI.getProfile(creator.handle);
-        const recipes = await recipeAPI.getByUser(creatorId);
+      const freshCreator = await userAPI.getProfile(creator.handle);
+      const recipes = await recipeAPI.getByUser(creatorId);
 
-        setCreatorProfile(freshCreator);
-        setTheirRecipes(recipes || []);
-      } catch (err) {
-        console.log("Creator load error:", err.message);
-      }
-    };
-
-    loadCreator();
+      setCreatorProfile(freshCreator);
+      setTheirRecipes(recipes || []);
+    } catch (err) {
+      console.log("Creator load error:", err.message);
+    }
   }, [creator?.handle, creatorId]);
+
+  useEffect(() => {
+    loadCreator();
+  }, [loadCreator]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadCreator();
+    setRefreshing(false);
+  }, [loadCreator]);
 
   const displayCreator = creatorProfile || creator;
 
@@ -61,6 +69,14 @@ export default function CreatorScreen() {
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
+          />
+        }
       >
         {/* Cover */}
         <View

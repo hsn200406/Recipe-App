@@ -85,7 +85,11 @@ export default function EditProfileScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 20}
         style={{ flex: 1 }}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <TouchableWithoutFeedback
+          onPress={Keyboard.dismiss}
+          accessible={false}
+          disabled={Platform.OS === "web"}
+        >
           <View style={{ flex: 1 }}>
       <View
         style={[

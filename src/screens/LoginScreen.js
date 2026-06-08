@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -10,7 +9,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -92,193 +90,188 @@ export default function LoginScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 20}
         style={{ flex: 1 }}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <ScrollView
-            contentContainerStyle={ls.scroll}
-            keyboardShouldPersistTaps="handled"
+        {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}> */}
+        <ScrollView
+          contentContainerStyle={ls.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo area */}
+          <View style={ls.logoArea}>
+            <Text style={{ fontSize: 52 }}>🍴</Text>
+            <Text style={[ls.appName, { color: theme.accent }]}>
+              RecipeSocial
+            </Text>
+            <Text style={[ls.tagline, { color: theme.muted }]}>
+              Create, share, and discover recipes
+            </Text>
+          </View>
+
+          {/* Tab switcher */}
+          <View
+            style={[
+              ls.tabRow,
+              { backgroundColor: theme.surface, borderColor: theme.border },
+            ]}
           >
-            {/* Logo area */}
-            <View style={ls.logoArea}>
-              <Text style={{ fontSize: 52 }}>🍴</Text>
-              <Text style={[ls.appName, { color: theme.accent }]}>
-                RecipeSocial
-              </Text>
-              <Text style={[ls.tagline, { color: theme.muted }]}>
-                Create, share, and discover recipes
-              </Text>
-            </View>
-
-            {/* Tab switcher */}
-            <View
-              style={[
-                ls.tabRow,
-                { backgroundColor: theme.surface, borderColor: theme.border },
-              ]}
-            >
-              {[
-                ["login", "Sign In"],
-                ["register", "Create Account"],
-              ].map(([id, label]) => (
-                <TouchableOpacity
-                  key={id}
-                  onPress={() => setMode(id)}
-                  style={[
-                    ls.tab,
-                    {
-                      backgroundColor:
-                        mode === id ? theme.accent : "transparent",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color: mode === id ? "#fff" : theme.muted,
-                      fontWeight: "600",
-                      fontSize: 14,
-                    }}
-                  >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Form */}
-            <View style={ls.form}>
-              {mode === "register" && (
-                <>
-                  <View>
-                    <Text style={[ls.label, { color: theme.muted }]}>
-                      FULL NAME
-                    </Text>
-                    <TextInput
-                      ref={nameRef}
-                      value={name}
-                      onChangeText={setName}
-                      placeholder="e.g. Alex Rivera"
-                      placeholderTextColor={theme.muted}
-                      style={inputStyle}
-                      autoCapitalize="words"
-                      returnKeyType="next"
-                      onSubmitEditing={() => handleRef.current?.focus()}
-                      blurOnSubmit={false}
-                      textContentType="name"
-                    />
-                  </View>
-                  <View>
-                    <Text style={[ls.label, { color: theme.muted }]}>
-                      USERNAME
-                    </Text>
-                    <View style={{ position: "relative" }}>
-                      <Text style={[ls.atSign, { color: theme.muted }]}>@</Text>
-                      <TextInput
-                        ref={handleRef}
-                        value={handle}
-                        onChangeText={setHandle}
-                        placeholder="yourhandle"
-                        placeholderTextColor={theme.muted}
-                        style={[inputStyle, { paddingLeft: 32 }]}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        returnKeyType="next"
-                        onSubmitEditing={() => emailRef.current?.focus()}
-                        blurOnSubmit={false}
-                      />
-                    </View>
-                  </View>
-                </>
-              )}
-
-              <View>
-                <Text style={[ls.label, { color: theme.muted }]}>EMAIL</Text>
-                <TextInput
-                  ref={emailRef}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  placeholderTextColor={theme.muted}
-                  style={inputStyle}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="next"
-                  onSubmitEditing={() => passRef.current?.focus()}
-                  blurOnSubmit={false}
-                  textContentType="emailAddress"
-                  autoComplete="email"
-                />
-              </View>
-
-              <View>
-                <Text style={[ls.label, { color: theme.muted }]}>PASSWORD</Text>
-                <View style={{ position: "relative" }}>
-                  <TextInput
-                    ref={passRef}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder={
-                      mode === "register"
-                        ? "Min. 8 characters"
-                        : "Your password"
-                    }
-                    placeholderTextColor={theme.muted}
-                    secureTextEntry={!showPass}
-                    style={[inputStyle, { paddingRight: 44 }]}
-                    autoCapitalize="none"
-                    returnKeyType="done"
-                    onSubmitEditing={submit}
-                    textContentType="password"
-                    autoComplete="password"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPass((v) => !v)}
-                    style={ls.eyeBtn}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    accessibilityLabel={
-                      showPass ? "Hide password" : "Show password"
-                    }
-                  >
-                    <Text style={{ color: theme.muted, fontSize: 16 }}>
-                      {showPass ? "🙈" : "👁"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* inline hint for password when registering */}
-              {mode === "register" &&
-                password.length > 0 &&
-                password.length < 8 && (
-                  <Text
-                    style={{ fontSize: 12, color: theme.error || "#e74c3c" }}
-                  >
-                    Password should be at least 8 characters
-                  </Text>
-                )}
-
+            {[
+              ["login", "Sign In"],
+              ["register", "Create Account"],
+            ].map(([id, label]) => (
               <TouchableOpacity
-                onPress={submit}
-                disabled={!canSubmit}
+                key={id}
+                onPress={() => setMode(id)}
                 style={[
-                  ls.submitBtn,
+                  ls.tab,
                   {
-                    backgroundColor: theme.accent,
-                    opacity: canSubmit ? 1 : 0.5,
+                    backgroundColor: mode === id ? theme.accent : "transparent",
                   },
                 ]}
-                accessibilityState={{ disabled: !canSubmit }}
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={ls.submitText}>
-                    {mode === "login" ? "Sign In" : "Create Account"}
-                  </Text>
-                )}
+                <Text
+                  style={{
+                    color: mode === id ? "#fff" : theme.muted,
+                    fontWeight: "600",
+                    fontSize: 14,
+                  }}
+                >
+                  {label}
+                </Text>
               </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Form */}
+          <View style={ls.form}>
+            {mode === "register" && (
+              <>
+                <View>
+                  <Text style={[ls.label, { color: theme.muted }]}>
+                    FULL NAME
+                  </Text>
+                  <TextInput
+                    ref={nameRef}
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="e.g. Alex Rivera"
+                    placeholderTextColor={theme.muted}
+                    style={inputStyle}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                    onSubmitEditing={() => handleRef.current?.focus()}
+                    blurOnSubmit={false}
+                    textContentType="name"
+                  />
+                </View>
+                <View>
+                  <Text style={[ls.label, { color: theme.muted }]}>
+                    USERNAME
+                  </Text>
+                  <View style={{ position: "relative" }}>
+                    <Text style={[ls.atSign, { color: theme.muted }]}>@</Text>
+                    <TextInput
+                      ref={handleRef}
+                      value={handle}
+                      onChangeText={setHandle}
+                      placeholder="yourhandle"
+                      placeholderTextColor={theme.muted}
+                      style={[inputStyle, { paddingLeft: 32 }]}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      onSubmitEditing={() => emailRef.current?.focus()}
+                      blurOnSubmit={false}
+                    />
+                  </View>
+                </View>
+              </>
+            )}
+
+            <View>
+              <Text style={[ls.label, { color: theme.muted }]}>EMAIL</Text>
+              <TextInput
+                ref={emailRef}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                placeholderTextColor={theme.muted}
+                style={inputStyle}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => passRef.current?.focus()}
+                blurOnSubmit={false}
+                textContentType="emailAddress"
+                autoComplete="email"
+              />
             </View>
-          </ScrollView>
-        </TouchableWithoutFeedback>
+
+            <View>
+              <Text style={[ls.label, { color: theme.muted }]}>PASSWORD</Text>
+              <View style={{ position: "relative" }}>
+                <TextInput
+                  ref={passRef}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder={
+                    mode === "register" ? "Min. 8 characters" : "Your password"
+                  }
+                  placeholderTextColor={theme.muted}
+                  secureTextEntry={!showPass}
+                  style={[inputStyle, { paddingRight: 44 }]}
+                  autoCapitalize="none"
+                  returnKeyType="done"
+                  onSubmitEditing={submit}
+                  textContentType="password"
+                  autoComplete="password"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPass((v) => !v)}
+                  style={ls.eyeBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel={
+                    showPass ? "Hide password" : "Show password"
+                  }
+                >
+                  <Text style={{ color: theme.muted, fontSize: 16 }}>
+                    {showPass ? "🙈" : "👁"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* inline hint for password when registering */}
+            {mode === "register" &&
+              password.length > 0 &&
+              password.length < 8 && (
+                <Text style={{ fontSize: 12, color: theme.error || "#e74c3c" }}>
+                  Password should be at least 8 characters
+                </Text>
+              )}
+
+            <TouchableOpacity
+              onPress={submit}
+              disabled={!canSubmit}
+              style={[
+                ls.submitBtn,
+                {
+                  backgroundColor: theme.accent,
+                  opacity: canSubmit ? 1 : 0.5,
+                },
+              ]}
+              accessibilityState={{ disabled: !canSubmit }}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={ls.submitText}>
+                  {mode === "login" ? "Sign In" : "Create Account"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+        {/* </TouchableWithoutFeedback> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
