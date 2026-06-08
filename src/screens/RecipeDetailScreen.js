@@ -102,6 +102,7 @@ function ReviewModal({ visible, onClose, onSubmit }) {
           >
             <ScrollView
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               contentContainerStyle={{ paddingBottom: 40 }}
             >
               {/* Handle (this is your “line on top”) */}
@@ -973,3 +974,4 @@ const s = StyleSheet.create({
     zIndex: 0,
   },
 });
+

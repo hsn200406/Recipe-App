@@ -1,12 +1,16 @@
 import { useRef, useState } from "react";
 import {
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -481,6 +485,13 @@ export default function CreateScreen() {
 
   return (
     <SafeAreaView style={[cr.safe, { backgroundColor: theme.bg }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 20}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={{ flex: 1 }}>
       {/* <AICaptureModal visible={showAI} onClose={() => setShowAI(false)} /> */}
 
       {/* Header */}
@@ -526,6 +537,8 @@ export default function CreateScreen() {
       <ScrollView
         contentContainerStyle={cr.scroll}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* STEP 1: Details */}
         {step === 1 && (
@@ -943,6 +956,9 @@ export default function CreateScreen() {
           </View>
         )}
       </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -1042,3 +1058,6 @@ const cr = StyleSheet.create({
   summaryStat: { fontSize: 12, marginTop: 4 },
   subtext: "#AAAAAA",
 });
+
+
+

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   ScrollView,
   StyleSheet,
   Text,
@@ -139,7 +140,9 @@ export default function SearchScreen() {
             { backgroundColor: theme.inputBg, borderColor: theme.border },
           ]}
         >
-          <Text style={{ fontSize: 16, marginRight: 8 }}>Search</Text>
+          <Text style={{ fontSize: 16, marginRight: 8, color: "#1fcc3c" }}>
+            Search
+          </Text>
 
           <TextInput
             value={query}
@@ -148,6 +151,7 @@ export default function SearchScreen() {
             placeholderTextColor={theme.muted}
             style={[sf.searchInput, { color: theme.text }]}
             returnKeyType="search"
+            onSubmitEditing={Keyboard.dismiss}
           />
 
           {query.length > 0 && (
@@ -183,6 +187,8 @@ export default function SearchScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={sf.scroll}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {showFilters && (
           <View
