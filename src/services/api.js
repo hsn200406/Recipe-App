@@ -19,7 +19,14 @@
  */
 
 // 🔌 CHANGE THIS ↓
-export const API_BASE_URL = "https://recipesocial-backend.onrender.com/api";
+// export const API_BASE_URL = "https://recipesocial-backend.onrender.com/api";
+export const API_BASE_URL = "http://192.168.0.103:5000/api";
+
+export const PUBLIC_APP_URL = "https://magical-melba-9488ff.netlify.app";
+
+export function getRecipeShareUrl(recipeId) {
+  return `${PUBLIC_APP_URL}/recipe/${recipeId}`;
+}
 
 // ── Core fetch helper ─────────────────────────────────────────────────────────
 async function apiFetch(path, token, options = {}) {
@@ -97,6 +104,8 @@ export const uploadVideo = async (token, videoUri) => {
 export const userAPI = {
   getMe: (token) => apiFetch("/user/me", token),
   getProfile: (handle) => apiFetch(`/user/${handle}`),
+  getFollowers: (userId) => apiFetch(`/user/${userId}/followers`),
+  getFollowing: (userId) => apiFetch(`/user/${userId}/following`),
   updateProfile: (token, body) =>
     apiFetch("/user/me", token, { method: "PUT", body: JSON.stringify(body) }),
   deleteMe: (token) => apiFetch("/user/me", token, { method: "DELETE" }),
@@ -115,11 +124,13 @@ export const reviewAPI = {
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────
-// export const notificationAPI = {
-//   getAll: (token) => apiFetch("/notifications", token),
-//   markAllRead: (token) =>
-//     apiFetch("/notifications/read-all", token, { method: "PUT" }),
-// };
+export const notificationAPI = {
+  getAll: (token) => apiFetch("/notifications", token),
+  markAllRead: (token) =>
+    apiFetch("/notifications/read-all", token, { method: "PUT" }),
+  markRead: (token, id) =>
+    apiFetch(`/notifications/${id}/read`, token, { method: "PUT" }),
+};
 
 // ── Share ─────────────────────────────────────────────────────────────────────
 export const shareAPI = {

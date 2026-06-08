@@ -27,6 +27,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [authError, setAuthError] = useState("");
   // Refs for better keyboard navigation between inputs
   const nameRef = useRef(null);
   const handleRef = useRef(null);
@@ -47,7 +48,10 @@ export default function LoginScreen() {
   })();
 
   const submit = async () => {
+    setAuthError("");
+
     if (!email.trim() || !password.trim()) {
+      setAuthError("Please fill in all required fields.");
       Alert.alert("Missing fields", "Please fill in all required fields.");
       return;
     }
@@ -68,7 +72,9 @@ export default function LoginScreen() {
       }
     } catch (err) {
       console.log("Auth error:", err);
-      Alert.alert("Authentication failed", err.message);
+      const message = err.message || "Authentication failed";
+      setAuthError(message);
+      Alert.alert("Authentication failed", message);
     } finally {
       setLoading(false);
     }
@@ -249,6 +255,22 @@ export default function LoginScreen() {
                 </Text>
               )}
 
+            {!!authError && (
+              <View
+                style={[
+                  ls.errorBox,
+                  {
+                    backgroundColor: theme.dark ? "#351614" : "#FFF0ED",
+                    borderColor: theme.error || "#e74c3c",
+                  },
+                ]}
+              >
+                <Text style={[ls.errorText, { color: theme.error || "#e74c3c" }]}>
+                  {authError}
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
               onPress={submit}
               disabled={!canSubmit}
@@ -308,6 +330,13 @@ const ls = StyleSheet.create({
     marginTop: 4,
   },
   submitText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  errorBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  errorText: { fontSize: 13, fontWeight: "600", lineHeight: 18 },
   guestBtn: { alignItems: "center", paddingVertical: 8 },
   guestText: { fontSize: 14 },
   divider: {

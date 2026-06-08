@@ -29,6 +29,7 @@ mongoose
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/recipes", require("./routes/recipes"));
 app.use("/api/user", require("./routes/user"));
+app.use("/api/notifications", require("./routes/notifications"));
 
 // health check
 app.get("/api/health", (req, res) => {

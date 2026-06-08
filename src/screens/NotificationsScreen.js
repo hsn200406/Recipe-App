@@ -1,6 +1,7 @@
-import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,48 +10,118 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../components/SharedComponents";
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-// import { NOTIFICATIONS } from "../data/mockData";
+import { notificationAPI } from "../services/api";
 
-const NOTIF_ICON = { follow: "👤", like: "♥", comment: "💬", share: "↗" };
+const NOTIF_ICON = {
+  follow: "+",
+  like: "♥",
+};
+
 const NOTIF_COLOR = (type, theme) =>
   ({
     follow: theme.green,
     like: theme.accent,
-    comment: "#3B82F6",
-    share: theme.gold,
   })[type] || theme.muted;
 
 export default function NotificationsScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
+  const { token } = useAuth();
   const [notifs, setNotifs] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const unreadCount = notifs.filter((n) => !n.read).length;
-  const markRead = (id) =>
-    setNotifs((ns) => ns.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  const markAllRead = () =>
-    setNotifs((ns) => ns.map((n) => ({ ...n, read: true })));
 
-  // Group by today / this week / earlier
+  const loadNotifications = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const data = await notificationAPI.getAll(token);
+      setNotifs(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.log("Notifications error:", err.message);
+    }
+  }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [loadNotifications]),
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadNotifications();
+    setRefreshing(false);
+  }, [loadNotifications]);
+
+  const markRead = async (id) => {
+    setNotifs((current) =>
+      current.map((n) => (n._id === id ? { ...n, read: true } : n)),
+    );
+
+    try {
+      await notificationAPI.markRead(token, id);
+    } catch (err) {
+      console.log("Mark read error:", err.message);
+    }
+  };
+
+  const markAllRead = async () => {
+    setNotifs((current) => current.map((n) => ({ ...n, read: true })));
+
+    try {
+      await notificationAPI.markAllRead(token);
+    } catch (err) {
+      console.log("Mark all read error:", err.message);
+    }
+  };
+
+  const getNotificationText = (notif) => {
+    if (notif.type === "follow") return "started following you";
+
+    if (notif.type === "like") {
+      return `liked your recipe${
+        notif.recipeId?.title ? `: ${notif.recipeId.title}` : ""
+      }`;
+    }
+
+    return "interacted with you";
+  };
+
+  const getTime = (dateValue) => {
+    const diff = Date.now() - new Date(dateValue).getTime();
+    const minutes = Math.max(1, Math.floor(diff / 60000));
+
+    if (minutes < 60) return `${minutes}m ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
   const groups = [
     {
       label: "Recent",
-      items: notifs.filter((n) =>
-        ["2m ago", "8m ago", "15m ago", "1h ago"].includes(n.time),
-      ),
+      items: notifs.filter((n) => {
+        const hours = (Date.now() - new Date(n.createdAt).getTime()) / 3600000;
+        return hours < 24;
+      }),
     },
     {
       label: "Earlier",
-      items: notifs.filter((n) =>
-        ["3h ago", "5h ago", "1d ago"].includes(n.time),
-      ),
+      items: notifs.filter((n) => {
+        const hours = (Date.now() - new Date(n.createdAt).getTime()) / 3600000;
+        return hours >= 24;
+      }),
     },
   ].filter((g) => g.items.length > 0);
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
-      {/* Header */}
       <View
         style={[
           s.header,
@@ -72,7 +143,6 @@ export default function NotificationsScreen() {
         )}
       </View>
 
-      {/* Unread counter */}
       {unreadCount > 0 && (
         <View
           style={[
@@ -94,16 +164,23 @@ export default function NotificationsScreen() {
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
+          />
+        }
       >
         {notifs.length === 0 ? (
           <View style={s.empty}>
-            <Text style={{ fontSize: 48, marginBottom: 12 }}>🔔</Text>
+            <Text style={[s.emptyIcon, { color: theme.muted }]}>bell</Text>
             <Text style={[s.emptyTitle, { color: theme.text }]}>
               No notifications yet
             </Text>
             <Text style={[s.emptyDesc, { color: theme.muted }]}>
-              When people follow you, like or share your recipes, you'll see it
-              here.
+              Follows and recipe likes will show up here.
             </Text>
           </View>
         ) : (
@@ -114,8 +191,8 @@ export default function NotificationsScreen() {
               </Text>
               {group.items.map((notif) => (
                 <TouchableOpacity
-                  key={notif.id}
-                  onPress={() => markRead(notif.id)}
+                  key={notif._id}
+                  onPress={() => markRead(notif._id)}
                   activeOpacity={0.75}
                   style={[
                     s.notifRow,
@@ -131,11 +208,12 @@ export default function NotificationsScreen() {
                     },
                   ]}
                 >
-                  {/* Avatar with type icon badge */}
                   <View style={s.avatarWrap}>
                     <Avatar
-                      initial={notif.initial}
-                      color={notif.color}
+                      initial={
+                        notif.actorId?.name?.charAt(0)?.toUpperCase() || "?"
+                      }
+                      color={notif.actorId?.avatarColor || theme.accent}
                       size={42}
                     />
                     <View
@@ -144,24 +222,24 @@ export default function NotificationsScreen() {
                         { backgroundColor: NOTIF_COLOR(notif.type, theme) },
                       ]}
                     >
-                      <Text style={{ color: "#fff", fontSize: 9 }}>
-                        {NOTIF_ICON[notif.type]}
+                      <Text style={s.typeBadgeText}>
+                        {NOTIF_ICON[notif.type] || ""}
                       </Text>
                     </View>
                   </View>
 
-                  {/* Text */}
                   <View style={s.notifContent}>
                     <Text style={[s.notifText, { color: theme.text }]}>
-                      <Text style={{ fontWeight: "700" }}>@{notif.actor}</Text>{" "}
-                      {notif.text}
+                      <Text style={{ fontWeight: "700" }}>
+                        @{notif.actorId?.handle || "someone"}
+                      </Text>{" "}
+                      {getNotificationText(notif)}
                     </Text>
                     <Text style={[s.notifTime, { color: theme.muted }]}>
-                      {notif.time}
+                      {getTime(notif.createdAt)}
                     </Text>
                   </View>
 
-                  {/* Unread dot */}
                   {!notif.read && (
                     <View
                       style={[s.unreadDot, { backgroundColor: theme.accent }]}
@@ -210,6 +288,7 @@ const s = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     gap: 12,
+    marginBottom: 8,
   },
   avatarWrap: { position: "relative" },
   typeBadge: {
@@ -222,6 +301,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  typeBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
   notifContent: { flex: 1, gap: 3 },
   notifText: { fontSize: 14, lineHeight: 20 },
   notifTime: { fontSize: 12 },
@@ -231,6 +311,18 @@ const s = StyleSheet.create({
     paddingTop: 80,
     paddingHorizontal: 40,
     gap: 10,
+  },
+  emptyIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1,
+    textAlign: "center",
+    textAlignVertical: "center",
+    lineHeight: 52,
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   emptyTitle: { fontSize: 20, fontWeight: "700" },
   emptyDesc: { fontSize: 14, textAlign: "center", lineHeight: 22 },

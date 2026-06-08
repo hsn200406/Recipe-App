@@ -1,6 +1,8 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Animated,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -20,10 +22,18 @@ export default function CreatorScreen() {
   const route = useRoute();
   const { user, toggleFollow } = useAuth();
   const { creator } = route.params || {};
+  const modalOpacity = useRef(new Animated.Value(0)).current;
+  const modalScale = useRef(new Animated.Value(0.96)).current;
 
   const [creatorProfile, setCreatorProfile] = useState(creator);
   const [theirRecipes, setTheirRecipes] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [socialModal, setSocialModal] = useState({
+    visible: false,
+    title: "",
+    users: [],
+    loading: false,
+  });
   const creatorId = creator?._id || creator?.id;
   const currentUserId = user?._id || user?.id;
   const isOwnProfile = creatorId === currentUserId;
@@ -47,6 +57,28 @@ export default function CreatorScreen() {
     loadCreator();
   }, [loadCreator]);
 
+  useEffect(() => {
+    if (!socialModal.visible) return;
+
+    modalOpacity.setValue(0);
+    modalScale.setValue(0.96);
+
+    Animated.parallel([
+      Animated.timing(modalOpacity, {
+        toValue: 1,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+      Animated.spring(modalScale, {
+        toValue: 1,
+        damping: 18,
+        stiffness: 180,
+        mass: 0.8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [modalOpacity, modalScale, socialModal.visible]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadCreator();
@@ -59,6 +91,41 @@ export default function CreatorScreen() {
     await toggleFollow(creatorId);
   };
 
+  const openSocialList = async (type) => {
+    if (!creatorId) return;
+
+    const title = type === "followers" ? "Followers" : "Following";
+
+    setSocialModal({
+      visible: true,
+      title,
+      users: [],
+      loading: true,
+    });
+
+    try {
+      const users =
+        type === "followers"
+          ? await userAPI.getFollowers(creatorId)
+          : await userAPI.getFollowing(creatorId);
+
+      setSocialModal({
+        visible: true,
+        title,
+        users: Array.isArray(users) ? users : [],
+        loading: false,
+      });
+    } catch (err) {
+      console.log("Social list error:", err.message);
+      setSocialModal({
+        visible: true,
+        title,
+        users: [],
+        loading: false,
+      });
+    }
+  };
+
   if (!creator) return null;
 
   const featuredRecipes = [];
@@ -66,6 +133,82 @@ export default function CreatorScreen() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
+      <Modal
+        visible={socialModal.visible}
+        transparent
+        animationType="none"
+        onRequestClose={() =>
+          setSocialModal((prev) => ({ ...prev, visible: false }))
+        }
+      >
+        <Animated.View style={[s.modalOverlay, { opacity: modalOpacity }]}>
+          <Animated.View
+            style={[
+              s.modalSheet,
+              { backgroundColor: theme.card, borderColor: theme.border },
+              { transform: [{ scale: modalScale }] },
+            ]}
+          >
+            <View style={s.modalHeader}>
+              <Text style={[s.modalTitle, { color: theme.text }]}>
+                {socialModal.title}
+              </Text>
+              <TouchableOpacity
+                onPress={() =>
+                  setSocialModal((prev) => ({ ...prev, visible: false }))
+                }
+                style={[
+                  s.modalCloseBtn,
+                  { backgroundColor: theme.pillBg, borderColor: theme.border },
+                ]}
+              >
+                <Text style={[s.modalCloseText, { color: theme.muted }]}>
+                  X
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {socialModal.loading ? (
+              <Text style={{ color: theme.muted, paddingVertical: 20 }}>
+                Loading...
+              </Text>
+            ) : socialModal.users.length === 0 ? (
+              <Text style={{ color: theme.muted, paddingVertical: 20 }}>
+                No users to show yet.
+              </Text>
+            ) : (
+              <ScrollView style={{ maxHeight: 360 }}>
+                {socialModal.users.map((person) => (
+                  <TouchableOpacity
+                    key={person._id || person.id}
+                    style={[s.userRow, { borderBottomColor: theme.border }]}
+                    onPress={() => {
+                      setSocialModal((prev) => ({ ...prev, visible: false }));
+                      navigation.push("Creator", { creator: person });
+                    }}
+                  >
+                    <Avatar
+                      initial={person.name?.charAt(0)?.toUpperCase() || "?"}
+                      color={person.avatarColor || theme.accent}
+                      size={34}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.userName, { color: theme.text }]}>
+                        {person.name}
+                      </Text>
+                      <Text style={[s.userHandle, { color: theme.muted }]}>
+                        @{person.handle}
+                      </Text>
+                    </View>
+                    <Text style={{ color: theme.muted, fontSize: 18 }}>›</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </Animated.View>
+        </Animated.View>
+      </Modal>
+
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
@@ -176,15 +319,25 @@ export default function CreatorScreen() {
             ]}
           >
             <StatCell value={theirRecipes.length} label="Recipes" borderRight />
-            <StatCell
-              value={(displayCreator?.followers?.length || 0).toLocaleString()}
-              label="Followers"
-              borderRight
-            />
-            <StatCell
-              value={displayCreator?.following?.length || 0}
-              label="Following"
-            />
+            <TouchableOpacity
+              style={s.statButton}
+              onPress={() => openSocialList("followers")}
+            >
+              <StatCell
+                value={(displayCreator?.followers?.length || 0).toLocaleString()}
+                label="Followers"
+                borderRight
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.statButton}
+              onPress={() => openSocialList("following")}
+            >
+              <StatCell
+                value={displayCreator?.following?.length || 0}
+                label="Following"
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Action buttons */}
@@ -385,6 +538,7 @@ const s = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
   },
+  statButton: { flex: 1 },
   actionRow: { flexDirection: "row", gap: 10 },
   actionBtn: {
     flex: 1,
@@ -430,4 +584,41 @@ const s = StyleSheet.create({
   },
   recipeTitle: { fontSize: 15, fontWeight: "600", marginBottom: 2 },
   recipeMeta: { fontSize: 12 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    maxHeight: "72%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "700" },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCloseText: { fontSize: 13, fontWeight: "800" },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  userName: { fontSize: 14, fontWeight: "700" },
+  userHandle: { fontSize: 12, marginTop: 2 },
 });

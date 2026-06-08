@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -57,6 +58,21 @@ export default function SettingsScreen() {
 
   const chevron = <Text style={{ fontSize: 18, color: theme.muted }}>›</Text>;
 
+  const confirmAction = (title, message, onConfirm) => {
+    if (Platform.OS === "web") {
+      if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+      return;
+    }
+
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: title.includes("Delete") ? "Delete" : "Log Out",
+        style: "destructive",
+        onPress: onConfirm,
+      },
+    ]);
+  };
   const deleteAccount = async () => {
     try {
       await userAPI.deleteMe(token);
@@ -173,16 +189,9 @@ export default function SettingsScreen() {
             label="Log Out"
             danger
             onPress={() =>
-              Alert.alert("Log Out", "Are you sure you want to log out?", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Log Out",
-                  style: "destructive",
-                  onPress: async () => {
-                    await logout();
-                  },
-                },
-              ])
+              confirmAction("Log Out", "Are you sure you want to log out?", async () => {
+                await logout();
+              })
             }
           />
           <SettingsRow
@@ -191,17 +200,10 @@ export default function SettingsScreen() {
             danger
             last
             onPress={() =>
-              Alert.alert(
+              confirmAction(
                 "Delete Account",
                 "This cannot be undone. All your recipes will be permanently deleted.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: deleteAccount,
-                  },
-                ],
+                deleteAccount,
               )
             }
           />
@@ -269,3 +271,4 @@ const s = StyleSheet.create({
   rowLabel: { flex: 1, fontSize: 15, marginLeft: 10 },
   rowRight: { alignItems: "flex-end" },
 });
+

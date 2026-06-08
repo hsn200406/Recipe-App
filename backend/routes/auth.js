@@ -4,6 +4,11 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const dns = require("dns").promises;
+const {
+  normalizeLoginInput,
+  normalizeRegisterInput,
+  validateRegisterInput,
+} = require("../utils/authValidation");
 
 async function hasValidEmailDomain(email) {
   const domain = email.split("@")[1];
@@ -21,38 +26,16 @@ async function hasValidEmailDomain(email) {
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
-    const name = req.body.name?.trim();
-    const handle = req.body.handle?.trim().toLowerCase();
-    const email = req.body.email?.trim().toLowerCase();
-    const password = req.body.password;
+    const { name, handle, email, password } = normalizeRegisterInput(req.body);
+    const validationMessage = validateRegisterInput({
+      name,
+      handle,
+      email,
+      password,
+    });
 
-    if (!name || !handle || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Please fill in all required fields" });
-    }
-
-    if (name.length < 5) {
-      return res
-        .status(400)
-        .json({ message: "Name must be at least 5 characters" });
-    }
-
-    if (!/^[a-z0-9_]{3,20}$/.test(handle)) {
-      return res.status(400).json({
-        message:
-          "Handle must be 3-20 characters and use only letters, numbers, or underscores",
-      });
-    }
-
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ message: "Please enter a valid email" });
-    }
-
-    if (password.length < 8) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 8 characters" });
+    if (validationMessage) {
+      return res.status(400).json({ message: validationMessage });
     }
 
     const emailDomainValid = await hasValidEmailDomain(email);
@@ -114,8 +97,7 @@ router.post("/register", async (req, res) => {
 // LOGIN
 router.post("/login", async (req, res) => {
   try {
-    const email = req.body.email?.trim().toLowerCase();
-    const password = req.body.password;
+    const { email, password } = normalizeLoginInput(req.body);
 
     const user = await User.findOne({ email });
     if (!user)

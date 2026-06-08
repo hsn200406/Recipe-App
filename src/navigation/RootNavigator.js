@@ -132,7 +132,6 @@ export default function RootNavigator() {
       {token ? (
         <>
           <Stack.Screen name="Main" component={MainTabs} />
-          <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
           <Stack.Screen name="Creator" component={CreatorScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
@@ -141,6 +140,7 @@ export default function RootNavigator() {
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
       )}
+      <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
     </Stack.Navigator>
   );
 }

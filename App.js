@@ -8,6 +8,17 @@ import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 
 import RootNavigator from "./src/navigation/RootNavigator";
 
+const linking = {
+  prefixes: ["https://magical-melba-9488ff.netlify.app", "recipesocial://"],
+  config: {
+    screens: {
+      Main: "",
+      RecipeDetail: "recipe/:recipeId",
+      Creator: "creator/:handle",
+    },
+  },
+};
+
 function AppInner() {
   const { dark } = useTheme();
 
@@ -16,7 +27,7 @@ function AppInner() {
       <StatusBar style={dark ? "light" : "dark"} />
 
       <View style={styles.appShell}>
-        <NavigationContainer>
+        <NavigationContainer linking={linking}>
           <RootNavigator />
         </NavigationContainer>
       </View>

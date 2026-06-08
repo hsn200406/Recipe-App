@@ -4,6 +4,12 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const User = require("../models/User");
 const Recipe = require("../models/Recipe");
+const Notification = require("../models/Notification");
+const {
+  buildProfileUpdates,
+  normalizeProfileInput,
+  validateProfileInput,
+} = require("../utils/profileValidation");
 
 router.get("/me", auth, async (req, res) => {
   try {
@@ -21,36 +27,14 @@ router.get("/me", auth, async (req, res) => {
 
 router.put("/me", auth, async (req, res) => {
   try {
-    const name = req.body.name?.trim();
-    const handle = req.body.handle?.trim().toLowerCase();
-    const bio = req.body.bio?.trim();
-    const avatarColor = req.body.avatarColor;
-    const specialty = req.body.specialty?.trim();
+    const profileInput = normalizeProfileInput(req.body);
+    const validationMessage = validateProfileInput(profileInput);
 
-    if (name !== undefined && name.length < 5) {
-      return res
-        .status(400)
-        .json({ message: "Name must be at least 5 characters" });
+    if (validationMessage) {
+      return res.status(400).json({ message: validationMessage });
     }
 
-    if (handle !== undefined && !/^[a-z0-9_]{3,20}$/.test(handle)) {
-      return res.status(400).json({
-        message:
-          "Handle must be 3-20 characters and use only letters, numbers, or underscores",
-      });
-    }
-
-    if (bio !== undefined && bio.length > 160) {
-      return res
-        .status(400)
-        .json({ message: "Bio must be 160 characters or less" });
-    }
-
-    if (specialty !== undefined && specialty.length > 40) {
-      return res
-        .status(400)
-        .json({ message: "Specialty must be 40 characters or less" });
-    }
+    const { handle } = profileInput;
 
     if (handle) {
       const existing = await User.findOne({
@@ -63,13 +47,7 @@ router.put("/me", auth, async (req, res) => {
       }
     }
 
-    const updates = {};
-
-    if (name !== undefined) updates.name = name;
-    if (handle !== undefined) updates.handle = handle.toLowerCase();
-    if (bio !== undefined) updates.bio = bio;
-    if (avatarColor !== undefined) updates.avatarColor = avatarColor;
-    if (specialty !== undefined) updates.specialty = specialty;
+    const updates = buildProfileUpdates(profileInput);
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: "No profile fields provided" });
@@ -142,6 +120,12 @@ router.post("/follow/:creatorId", auth, async (req, res) => {
     } else {
       user.following.push(creatorId);
       creator.followers.push(req.userId);
+
+      await Notification.create({
+        recipientId: creatorId,
+        actorId: req.userId,
+        type: "follow",
+      });
     }
 
     await user.save();
@@ -150,6 +134,50 @@ router.post("/follow/:creatorId", auth, async (req, res) => {
     res.json({
       following: user.following,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/:userId/followers", async (req, res) => {
+  try {
+    if (!req.params.userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const followers = await User.find({ _id: { $in: user.followers } }).select(
+      "name handle avatarColor specialty bio",
+    );
+
+    res.json(followers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/:userId/following", async (req, res) => {
+  try {
+    if (!req.params.userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const following = await User.find({ _id: { $in: user.following } }).select(
+      "name handle avatarColor specialty bio",
+    );
+
+    res.json(following);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

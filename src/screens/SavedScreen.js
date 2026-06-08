@@ -145,7 +145,8 @@ export default function SavedScreen() {
                       {recipe.title}
                     </Text>
                     <TouchableOpacity
-                      onPress={async () => {
+                      onPress={async (event) => {
+                        event?.stopPropagation?.();
                         const recipeId = recipe._id || recipe.id;
 
                         setSavedRecipes((prev) =>

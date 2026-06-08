@@ -19,7 +19,12 @@ import { Avatar, MacroBar, Stars } from "../components/SharedComponents";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { CREATORS } from "../data/mockData";
-import { reviewAPI, shareAPI } from "../services/api";
+import {
+  getRecipeShareUrl,
+  recipeAPI,
+  reviewAPI,
+  shareAPI,
+} from "../services/api";
 
 const ms = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject },
@@ -206,13 +211,13 @@ export default function RecipeDetailScreen() {
   const navigation = useNavigation();
   const { user, token, toggleLike, toggleSave, toggleFollow } = useAuth();
   const route = useRoute();
-  const { recipe: initialRecipe } = route.params || {};
+  const { recipe: initialRecipe, recipeId: linkedRecipeId } = route.params || {};
   const followedCreators = user?.following || [];
 
-  const recipe = initialRecipe || {};
-  const recipeId = recipe._id || recipe.id;
+  const [recipe, setRecipe] = useState(initialRecipe || null);
+  const recipeId = recipe?._id || recipe?.id || linkedRecipeId;
   const safeRecipe = {
-    ...recipe,
+    ...(recipe || {}),
     ingredients: recipe?.ingredients || [],
     steps: recipe?.steps || [],
     tags: recipe?.tags || [],
@@ -227,10 +232,10 @@ export default function RecipeDetailScreen() {
   const [likeCount, setLikeCount] = useState(initialRecipe?.likes || 0);
   const [shareCount, setShareCount] = useState(initialRecipe?.shares || 0);
   const hasNutrition =
-    recipe.calories > 0 ||
-    recipe.protein > 0 ||
-    recipe.carbs > 0 ||
-    recipe.fat > 0;
+    recipe?.calories > 0 ||
+    recipe?.protein > 0 ||
+    recipe?.carbs > 0 ||
+    recipe?.fat > 0;
 
   useEffect(() => {
     setLiked(authLiked);
@@ -244,10 +249,30 @@ export default function RecipeDetailScreen() {
   const [comment, setComment] = useState("");
   const [showReview, setShowReview] = useState(false);
 
+  useEffect(() => {
+    if (initialRecipe || !linkedRecipeId) return;
+
+    const loadLinkedRecipe = async () => {
+      try {
+        const data = await recipeAPI.getById(token, linkedRecipeId);
+
+        setRecipe(data);
+        setLikeCount(data.likes || 0);
+        setShareCount(data.shares || 0);
+        setReviews(data.reviews || []);
+      } catch (err) {
+        Alert.alert("Recipe unavailable", err.message);
+        navigation.goBack();
+      }
+    };
+
+    loadLinkedRecipe();
+  }, [initialRecipe, linkedRecipeId, navigation, token]);
+
   const creator =
-    typeof recipe.creatorId === "object"
+    typeof recipe?.creatorId === "object"
       ? recipe.creatorId
-      : CREATORS?.[recipe.creatorId] || {
+      : CREATORS?.[recipe?.creatorId] || {
           handle: "unknown",
           initial: "?",
           avatarColor: "#999",
@@ -255,7 +280,7 @@ export default function RecipeDetailScreen() {
           specialty: "",
           followers: 0,
         };
-  const creatorId = creator._id || recipe.creatorId;
+  const creatorId = creator._id || recipe?.creatorId;
   const currentUserId = user?._id || user?.id;
   const isOwnRecipe = creatorId === currentUserId;
   const authFollowed = followedCreators.includes(creatorId);
@@ -266,6 +291,16 @@ export default function RecipeDetailScreen() {
   }, [authFollowed]);
 
   const fmtCount = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n));
+
+  if (!recipe) {
+    return (
+      <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
+        <View style={s.loadingState}>
+          <Text style={{ color: theme.muted }}>Loading recipe...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const toggleStep = (i) =>
     setChecked((cs) =>
@@ -534,8 +569,12 @@ export default function RecipeDetailScreen() {
               active: false,
               onPress: async () => {
                 try {
+                  const recipeLink = getRecipeShareUrl(recipeId);
+
                   await Share.share({
-                    message: `Check out this recipe: ${recipe.title}`,
+                    title: recipe.title,
+                    message: `Check out this recipe: ${recipe.title}\n${recipeLink}`,
+                    url: recipeLink,
                   });
 
                   const data = await shareAPI.shareRecipe(token, recipeId);
@@ -792,6 +831,12 @@ export default function RecipeDetailScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
+  loadingState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
   hero: {
     height: 230,
     alignItems: "center",

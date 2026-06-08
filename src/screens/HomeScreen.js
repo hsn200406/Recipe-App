@@ -15,7 +15,7 @@ import { Avatar } from "../components/SharedComponents";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 // import { RECIPES } from '../data/mockData'; // To test with moch data
-import { recipeAPI } from "../services/api";
+import { notificationAPI, recipeAPI } from "../services/api";
 
 // ── Home Screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -23,7 +23,7 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [feedTab, setFeedTab] = useState("foryou");
-  const unreadNotifs = 0;
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
   const opacity = useRef(new Animated.Value(1)).current;
   const [animating, setAnimating] = useState(false);
   const [feed, setFeed] = useState([]);
@@ -68,16 +68,32 @@ export default function HomeScreen() {
     }
   }, [token, followedKey]);
 
+  const loadUnreadNotifications = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const data = await notificationAPI.getAll(token);
+      const unread = Array.isArray(data)
+        ? data.filter((notif) => !notif.read).length
+        : 0;
+      setUnreadNotifs(unread);
+    } catch (err) {
+      console.log("Unread notifications error:", err.message);
+    }
+  }, [token]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadFeed();
+    await loadUnreadNotifications();
     setRefreshing(false);
-  }, [loadFeed]);
+  }, [loadFeed, loadUnreadNotifications]);
 
   useFocusEffect(
     useCallback(() => {
       loadFeed();
-    }, [loadFeed]),
+      loadUnreadNotifications();
+    }, [loadFeed, loadUnreadNotifications]),
   );
 
   useEffect(() => {

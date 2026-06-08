@@ -4,10 +4,13 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const Recipe = require("../models/Recipe");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const {
   getRatingSummary,
   hasUserReviewed,
 } = require("../utils/recipeRatings");
+const { buildRecipeSearchFilter } = require("../utils/recipeSearch");
+const { toggleId, updateCounter } = require("../utils/socialState");
 
 // Routes:
 // GET    /api/recipes              Public recipe feed
@@ -209,36 +212,7 @@ router.get("/following", auth, async (req, res) => {
 
 router.get("/search", async (req, res) => {
   try {
-    const { q, cuisine, meal, protein, carbs, fat } = req.query;
-
-    const filter = { isPublic: true };
-
-    if (q) {
-      filter.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-        { cuisine: { $regex: q, $options: "i" } },
-        { meal: { $regex: q, $options: "i" } },
-        { tags: { $regex: q, $options: "i" } },
-      ];
-    }
-
-    if (cuisine && cuisine !== "All") {
-      filter.cuisine = cuisine;
-    }
-
-    if (meal && meal !== "All") {
-      filter.meal = meal;
-    }
-
-    if (protein === "High") filter.protein = { $gte: 30 };
-    if (protein === "Low") filter.protein = { $lte: 15 };
-
-    if (carbs === "High") filter.carbs = { $gte: 60 };
-    if (carbs === "Low") filter.carbs = { $lte: 30 };
-
-    if (fat === "High") filter.fat = { $gte: 25 };
-    if (fat === "Low") filter.fat = { $lte: 10 };
+    const filter = buildRecipeSearchFilter(req.query);
 
     const recipes = await Recipe.find(filter)
       .populate(
@@ -434,18 +408,21 @@ router.post("/:id/like", auth, async (req, res) => {
     }
 
     const recipeId = req.params.id;
-    const alreadyLiked = user.likedRecipes.includes(recipeId);
-
-    if (alreadyLiked) {
-      user.likedRecipes = user.likedRecipes.filter((id) => id !== recipeId);
-      recipe.likes = Math.max(0, recipe.likes - 1);
-    } else {
-      user.likedRecipes.push(recipeId);
-      recipe.likes += 1;
-    }
+    const likedState = toggleId(user.likedRecipes, recipeId);
+    user.likedRecipes = likedState.list;
+    recipe.likes = updateCounter(recipe.likes, likedState.active);
 
     await user.save();
     await recipe.save();
+
+    if (likedState.active && recipe.creatorId.toString() !== req.userId) {
+      await Notification.create({
+        recipientId: recipe.creatorId,
+        actorId: req.userId,
+        recipeId: recipe._id,
+        type: "like",
+      });
+    }
 
     res.json({
       likedRecipes: user.likedRecipes,
@@ -474,15 +451,9 @@ router.post("/:id/save", auth, async (req, res) => {
     }
 
     const recipeId = req.params.id;
-    const alreadySaved = user.savedRecipes.includes(recipeId);
-
-    if (alreadySaved) {
-      user.savedRecipes = user.savedRecipes.filter((id) => id !== recipeId);
-      recipe.saves = Math.max(0, recipe.saves - 1);
-    } else {
-      user.savedRecipes.push(recipeId);
-      recipe.saves += 1;
-    }
+    const savedState = toggleId(user.savedRecipes, recipeId);
+    user.savedRecipes = savedState.list;
+    recipe.saves = updateCounter(recipe.saves, savedState.active);
 
     await user.save();
     await recipe.save();
