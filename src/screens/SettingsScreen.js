@@ -56,10 +56,10 @@ export default function SettingsScreen() {
   const { logout, user, token } = useAuth();
   const navigation = useNavigation();
 
-  const [notifLikes, setNotifLikes] = useState(true);
-  const [notifComments, setNotifComments] = useState(true);
-  const [notifFollows, setNotifFollows] = useState(true);
-  const [notifShares, setNotifShares] = useState(false);
+  // const [notifLikes, setNotifLikes] = useState(true);
+  // const [notifComments, setNotifComments] = useState(true);
+  // const [notifFollows, setNotifFollows] = useState(true);
+  // const [notifShares, setNotifShares] = useState(false);
   const [defaultPublic, setDefaultPublic] = useState(true);
 
   const chevron = <Text style={{ fontSize: 18, color: theme.muted }}>›</Text>;
@@ -144,7 +144,7 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         {/* Notifications */}
-        <SettingsSection title="NOTIFICATIONS">
+        {/* <SettingsSection title="NOTIFICATIONS">
           <SettingsRow
             icon="❤️"
             label="Likes"
@@ -186,7 +186,7 @@ export default function SettingsScreen() {
             }
             last
           />
-        </SettingsSection>
+        </SettingsSection> */}
 
         {/* Privacy */}
         <SettingsSection title="PRIVACY">
