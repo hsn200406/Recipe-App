@@ -1,182 +1,134 @@
 # RecipeSocial
 
+Live app: [LIVE_APP_URL](https://magical-melba-9488ff.netlify.app/) <!-- replace with real URL -->
+
 ## Project Overview
 
-RecipeSocial is a mobile recipe-sharing application built with React Native and Expo, backed by a Node.js, Express, and MongoDB API. The app lets users create accounts, publish recipes, discover recipes from other creators, save favorites, like recipes, follow creators, review recipes, and manage their own profile and recipe collection.
+RecipeSocial is a mobile recipe-sharing application built with React Native (Expo) and a Node.js/Express backend using MongoDB. The app provides user accounts, recipe creation, discovery, social interactions (likes, saves, follows), reviews, and basic profile management.
 
-The project is structured as a full-stack application with a React Native frontend and an Express/Mongoose backend.
+This repository contains two main parts:
 
-## Features
+- Frontend: React Native + Expo app in the project root (`App.js`, `src/`)
+- Backend: Node.js + Express API located under `backend/`
 
-- User registration and login with JWT authentication
-- Backend validation for name, username, email format, email domain, and password length
-- User profiles with editable name, handle, bio, avatar color, and specialty
-- Public recipe feed with creator information
-- Recipe creation with title, description, image URL, meal type, cuisine, time, nutrition, ingredients, steps, and visibility
-- Recipe detail screen with ingredients, steps, reviews, stats, nutrition, creator profile, like, save, review, and share actions
-- Like and unlike recipes with backend count updates
-- Save and unsave recipes with a dedicated Saved screen
-- Follow and unfollow creators
-- Creator profile screen with creator stats and public recipes
-- Search and filtering for public recipes
-- Profile screen showing created, liked, and saved recipes
-- Delete own recipes with confirmation
-- Delete account support from settings
-- Native share support for recipes
-- Dark mode support
-- Basic notifications screen placeholder with empty state
-- Health check route for backend deployment monitoring
+## Quick feature summary
 
-## Installation Instructions
+- User registration and login (JWT-based authentication)
+- Profile management (name, handle, bio, avatar color, specialty)
+- Create, edit, and delete recipes with ingredients, steps, nutrition, and visibility
+- Recipe feed with likes, saves, follow, and search/filtering
+- Recipe detail view with reviews, nutrition, and sharing
+- Local validation for registration and forms; backend re-validation
+- Dark mode support and theme context
+- Basic notifications screen placeholder and health-check endpoint
 
-### Prerequisites
+## Screens (frontend)
 
-Make sure you have the following installed:
+- `LoginScreen` — Sign in / create account flow
+- `HomeScreen` — Main feed (recipes)
+- `SearchScreen` — Search and filter recipes
+- `RecipeDetailScreen` — Full recipe view, reviews, actions
+- `CreateScreen` — Multi-step recipe creation (details, ingredients, steps, publish)
+- `ProfileScreen` / `EditProfileScreen` — View and edit user profile
+- `SavedScreen` — Saved recipes
+- `NotificationsScreen` — Placeholder notifications
+- `SettingsScreen` — App/account settings
 
-- Node.js
-- npm
-- Expo CLI or Expo Go
-- MongoDB Atlas account or local MongoDB instance
-- Git
+## Installation & running (full-stack)
 
-### 1. Clone the repository
+Prereqs:
+
+- Node.js & npm
+- Expo CLI (optional: `npm install -g expo-cli`)
+- MongoDB Atlas account or local MongoDB
+
+1. Clone
 
 ```bash
-git clone <your-repository-url>
+git clone <your-repo-url>
 cd RecipeSocial
 ```
 
-### 2. Install frontend dependencies
-
-From the project root:
+2. Frontend dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Install backend dependencies
+3. Backend dependencies
 
 ```bash
 cd backend
 npm install
 ```
 
-### 4. Create backend environment variables
+4. Backend environment
 
-Inside the `backend` folder, create a `.env` file using `backend/.env.example` as a guide:
+Create `backend/.env` (do not commit). Example values:
 
 ```env
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_long_random_secret
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster0.example.mongodb.net/recipes
+JWT_SECRET=very_long_random_secret
 PORT=5000
 ```
 
-Important: do not commit the real `.env` file.
-
-### 5. Start the backend server
-
-From the `backend` folder:
+5. Start backend (development)
 
 ```bash
+cd backend
 npm run dev
 ```
 
-The backend should run on:
+Default backend URL: `http://localhost:5000` (health: `/api/health`).
 
-```txt
-http://localhost:5000
-```
+6. Configure frontend API
 
-You can check the backend health route at:
+Edit `src/services/api.js` and set `API_BASE_URL` to your backend API base (e.g. `http://YOUR_LOCAL_IP:5000/api` for testing on a real device).
 
-```txt
-http://localhost:5000/api/health
-```
+7. Start frontend (Expo)
 
-### 6. Configure frontend API URL
-
-In `src/services/api.js`, set `API_BASE_URL` to your backend URL.
-
-For a real phone on the same Wi-Fi, use your computer's local IP address:
-
-```js
-export const API_BASE_URL = "http://YOUR_LOCAL_IP:5000/api";
-```
-
-For an emulator or deployed backend, use the appropriate backend URL.
-
-### 7. Start the frontend app
-
-From the project root:
+From project root:
 
 ```bash
 npm start
 ```
 
-Then open the app using Expo Go, an emulator, or a simulator.
+Open with Expo Go (mobile) or an emulator/simulator.
 
-## Usage
+## Environment variables (summary)
 
-1. Open the app and create an account with a valid name, username, email, and password.
-2. Log in to access the main recipe feed.
-3. Browse recipes on the Home screen.
-4. Use Search to find recipes by keyword, cuisine, meal type, or nutrition filters.
-5. Open a recipe to view details, ingredients, steps, reviews, nutrition, and creator information.
-6. Like, save, review, or share recipes from the recipe detail screen.
-7. Follow creators to see their recipes in the Following feed.
-8. Create a new recipe from the Create tab by adding recipe details, ingredients, and steps.
-9. View your own recipes, liked recipes, and saved recipes from the Profile screen.
-10. Delete your own recipes from Profile when needed.
-11. Edit profile details from Profile or Settings.
-12. Log out or delete your account from Settings.
+- `MONGODB_URI` — MongoDB connection string (backend)
+- `JWT_SECRET` — JWT signing secret (backend)
+- `PORT` — backend port (optional, defaults used in code)
 
-## Technologies Used
+## API summary (high level)
 
-### Frontend
+Key backend routes are under `/api` — examples implemented in `backend/routes/`:
 
-- React Native
-- Expo
-- React Navigation
-- Expo SecureStore
-- Expo Status Bar
-- Expo Image Picker
-- React Native Gesture Handler
-- React Native Safe Area Context
-- React Native Screens
+- `POST /api/auth/register` — create account
+- `POST /api/auth/login` — login → returns JWT
+- `GET /api/recipes` — list/search recipes
+- `POST /api/recipes` — create recipe (authenticated)
+- `GET /api/recipes/:id` — recipe detail
+- `POST /api/reviews` — add review (authenticated)
 
-### Backend
+Refer to `backend/routes/` for the full list and parameters.
 
-- Node.js
-- Express
-- MongoDB
-- Mongoose
-- JSON Web Tokens
-- bcrypt
-- dotenv
-- cors
-- Node DNS promises API for email domain validation
+## Testing keyboard/input UX locally
 
-### Development Tools
+1. Start backend (`npm run dev` in `backend/`).
+2. Start Expo (`npm start` in project root).
+3. Open app on device or emulator. Navigate to `Login`, `Create`, `Search`, `Edit Profile`, and `Recipe Detail` screens and verify:
+   - Tapping outside inputs dismisses keyboard
+   - Next/Done keys move focus between inputs
+   - Inputs sit slightly above the keyboard (modern offset)
 
-- npm
-- Nodemon
-- Postman for API testing
-- MongoDB Atlas
+## Troubleshooting
 
-## Future Improvements
+- If the app cannot reach the backend from a real phone, set `API_BASE_URL` to `http://<your-computer-local-ip>:5000/api` and ensure both devices share a network and firewall allows the connection.
+- MongoDB connection errors: confirm `MONGODB_URI` and network access (Atlas IP whitelist or VPC rules).
+- If native modules fail on emulator, try clearing Expo cache: `npm start -- --clear`.
 
-- Real email verification with a provider such as Resend, SendGrid, Mailgun, or Nodemailer
-- Password reset flow
-- Proper image upload instead of image URL entry
-- Proper cooking video upload and playback using cloud storage such as S3, Cloudflare R2, or Cloudinary
-- Real notification system and notification preferences
-- Default recipe visibility preference saved to user settings
-- Social login with Google or Apple
-- AI recipe capture features for ingredient scanning and instruction transcription
-- Pagination or infinite scroll on more frontend screens
-- More advanced recommendation algorithm
-- Better review management, including editing or deleting reviews
-- User blocking and reporting tools
-- Production-ready Terms of Service and Privacy Policy pages
-- Automated tests for backend routes and core frontend flows
-- Improved deployment configuration for production environments
+## Contributing
+
+Contributions welcome. Please open issues for bugs or feature requests and submit PRs against the `main` branch.
