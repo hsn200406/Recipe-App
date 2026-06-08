@@ -519,6 +519,35 @@ export default function ProfileScreen() {
                       .join(" · ") || "Recipe"}
                   </Text>
 
+                  {activeTab === "recipes" && (
+                    <View
+                      style={[
+                        s.visibilityBadge,
+                        {
+                          backgroundColor: recipe.isPublic
+                            ? theme.accentSoft
+                            : theme.pillBg,
+                          borderColor: recipe.isPublic
+                            ? theme.accent + "44"
+                            : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          s.visibilityText,
+                          {
+                            color: recipe.isPublic
+                              ? theme.accent
+                              : theme.muted,
+                          },
+                        ]}
+                      >
+                        {recipe.isPublic ? "Public" : "Private"}
+                      </Text>
+                    </View>
+                  )}
+
                   <View style={s.recipeStats}>
                     <Stars rating={recipe.rating || 0} size={11} />
                     <Text style={{ fontSize: 11, color: theme.muted }}>
@@ -681,6 +710,18 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginTop: 3,
+  },
+  visibilityBadge: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 5,
+  },
+  visibilityText: {
+    fontSize: 10,
+    fontWeight: "700",
   },
 
   emptyTab: { alignItems: "center", paddingVertical: 40 },

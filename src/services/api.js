@@ -1,24 +1,3 @@
-/**
- * ─────────────────────────────────────────────────────────────────────────────
- * API SERVICE  —  src/services/api.js
- * ─────────────────────────────────────────────────────────────────────────────
- * All HTTP calls to your Node/Express backend live here.
- *
- * 🔌 SETUP: Replace API_BASE_URL below with your backend address.
- *
- *  LOCAL DEV (phone + laptop on same Wi-Fi):
- *    1. Find your laptop's LAN IP:
- *       Mac  → System Preferences → Network → Wi-Fi → IP Address
- *       PC   → cmd → ipconfig → IPv4 Address
- *    2. Set: http://192.168.x.x:5000/api   ← use your actual IP
- *       Do NOT use http://localhost  — your phone cannot reach it.
- *
- *  AFTER DEPLOYING BACKEND (Railway, Render, Heroku…):
- *    Set: https://your-app.railway.app/api
- * ─────────────────────────────────────────────────────────────────────────────
- */
-
-// 🔌 CHANGE THIS ↓
 export const API_BASE_URL = "https://recipesocial-backend.onrender.com/api";
 // export const API_BASE_URL = "http://192.168.0.103:5000/api";
 
@@ -82,7 +61,6 @@ export const recipeAPI = {
 };
 
 // ── Video Upload ──────────────────────────────────────────────────────────────
-// 🔌 API NOTE: backend stores video to S3/Cloudflare R2 → returns { videoUrl }
 export const uploadVideo = async (token, videoUri) => {
   const formData = new FormData();
   formData.append("video", {

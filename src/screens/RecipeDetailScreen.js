@@ -1,5 +1,5 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -249,6 +249,15 @@ export default function RecipeDetailScreen() {
   const [comment, setComment] = useState("");
   const [showReview, setShowReview] = useState(false);
 
+  const handleBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.replace(token ? "Main" : "Login");
+  }, [navigation, token]);
+
   useEffect(() => {
     if (initialRecipe || !linkedRecipeId) return;
 
@@ -262,12 +271,12 @@ export default function RecipeDetailScreen() {
         setReviews(data.reviews || []);
       } catch (err) {
         Alert.alert("Recipe unavailable", err.message);
-        navigation.goBack();
+        handleBack();
       }
     };
 
     loadLinkedRecipe();
-  }, [initialRecipe, linkedRecipeId, navigation, token]);
+  }, [initialRecipe, linkedRecipeId, handleBack, navigation, token]);
 
   const creator =
     typeof recipe?.creatorId === "object"
@@ -348,7 +357,7 @@ export default function RecipeDetailScreen() {
         <View
           style={[s.heroGlow, { backgroundColor: recipe.accentColor + "55" }]}
         />
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+        <TouchableOpacity onPress={handleBack} style={s.backBtn}>
           <Text style={{ color: "#fff", fontSize: 18 }}>←</Text>
         </TouchableOpacity>
         {recipe.imageUrl ? (
