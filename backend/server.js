@@ -30,7 +30,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/recipes", require("./routes/recipes"));
 app.use("/api/user", require("./routes/user"));
 
-// test route
+// health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });

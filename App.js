@@ -3,7 +3,6 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AuthProvider } from "./src/context/AuthContext";
-import { FollowProvider } from "./src/context/FollowContext";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 
 import RootNavigator from "./src/navigation/RootNavigator";
@@ -26,9 +25,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <FollowProvider>
-          <AppInner />
-        </FollowProvider>
+        <AppInner />
       </AuthProvider>
     </ThemeProvider>
   );

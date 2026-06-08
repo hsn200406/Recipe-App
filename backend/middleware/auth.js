@@ -8,8 +8,11 @@ module.exports = function (req, res, next) {
     return res.status(401).json({ message: "No token, access denied" });
   }
 
-  // 2. Extract token (format: "Bearer <token>")
-  const token = authHeader.split(" ")[1];
+  const [type, token] = authHeader.split(" ");
+
+  if (type !== "Bearer" || !token) {
+    return res.status(401).json({ message: "Invalid token format" });
+  }
 
   try {
     // 3. Verify token using secret
