@@ -3,6 +3,20 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const dns = require("dns").promises;
+
+async function hasValidEmailDomain(email) {
+  const domain = email.split("@")[1];
+
+  if (!domain) return false;
+
+  try {
+    const records = await dns.resolveMx(domain);
+    return records && records.length > 0;
+  } catch {
+    return false;
+  }
+}
 
 // REGISTER
 router.post("/register", async (req, res) => {
@@ -39,6 +53,14 @@ router.post("/register", async (req, res) => {
       return res
         .status(400)
         .json({ message: "Password must be at least 8 characters" });
+    }
+
+    const emailDomainValid = await hasValidEmailDomain(email);
+
+    if (!emailDomainValid) {
+      return res.status(400).json({
+        message: "Please use an email address with a valid email domain",
+      });
     }
 
     const existing = await User.findOne({

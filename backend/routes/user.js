@@ -114,90 +114,6 @@ router.delete("/me", auth, async (req, res) => {
   }
 });
 
-// LIKE recipe
-router.post("/like/:id", auth, async (req, res) => {
-  const user = await User.findById(req.userId);
-
-  if (!user) {
-    return res.status(404).json({ message: "Current user not found" });
-  }
-
-  const recipeId = req.params.id;
-
-  const recipe = await Recipe.findById(recipeId);
-
-  if (!recipe) {
-    return res.status(404).json({ message: "Recipe not found" });
-  }
-
-  const alreadyLiked = user.likedRecipes.includes(recipeId);
-
-  if (alreadyLiked) {
-    user.likedRecipes = user.likedRecipes.filter((id) => id !== recipeId);
-    recipe.likes = Math.max(0, recipe.likes - 1);
-  } else {
-    user.likedRecipes.push(recipeId);
-    recipe.likes += 1;
-  }
-
-  await user.save();
-  res.json(user.likedRecipes);
-});
-
-// ─────────────────────────────
-// 🔖 SAVE / UNSAVE RECIPE
-// ─────────────────────────────
-router.post("/save/:recipeId", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "Current user not found" });
-    }
-
-    const recipeId = req.params.recipeId;
-
-    const recipe = await Recipe.findById(recipeId);
-
-    if (!recipe) {
-      return res.status(404).json({ message: "Recipe not found" });
-    }
-
-    const isSaved = user.savedRecipes.includes(recipeId);
-
-    if (isSaved) {
-      user.savedRecipes = user.savedRecipes.filter((id) => id !== recipeId);
-      recipe.saves = Math.max(0, recipe.saves - 1);
-    } else {
-      user.savedRecipes.push(recipeId);
-      recipe.saves += 1;
-    }
-
-    await user.save();
-    await recipe.save();
-
-    res.json(user.savedRecipes);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/:handle", async (req, res) => {
-  try {
-    const user = await User.findOne({
-      handle: req.params.handle.toLowerCase(),
-    }).select("-password -email");
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
 // FOLLOW / UNFOLLOW USER
 router.post("/follow/:creatorId", auth, async (req, res) => {
   try {
@@ -234,6 +150,22 @@ router.post("/follow/:creatorId", auth, async (req, res) => {
     res.json({
       following: user.following,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/:handle", async (req, res) => {
+  try {
+    const user = await User.findOne({
+      handle: req.params.handle.toLowerCase(),
+    }).select("-password -email");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
