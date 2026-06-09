@@ -231,6 +231,7 @@ export default function RecipeDetailScreen() {
   const [saved, setSaved] = useState(initialRecipe?.isSaved ?? authSaved);
   const [likeCount, setLikeCount] = useState(initialRecipe?.likes || 0);
   const [shareCount, setShareCount] = useState(initialRecipe?.shares || 0);
+  const [visibilitySaving, setVisibilitySaving] = useState(false);
   const hasNutrition =
     recipe?.calories > 0 ||
     recipe?.protein > 0 ||
@@ -301,6 +302,23 @@ export default function RecipeDetailScreen() {
 
   const fmtCount = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n));
 
+  const toggleRecipeVisibility = async () => {
+    if (!recipeId) return;
+
+    try {
+      setVisibilitySaving(true);
+      const updatedRecipe = await recipeAPI.update(token, recipeId, {
+        isPublic: !recipe.isPublic,
+      });
+
+      setRecipe(updatedRecipe);
+    } catch (err) {
+      Alert.alert("Update failed", err.message);
+    } finally {
+      setVisibilitySaving(false);
+    }
+  };
+
   if (!recipe) {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]}>
@@ -364,7 +382,7 @@ export default function RecipeDetailScreen() {
           <Image
             source={{ uri: recipe.imageUrl }}
             style={s.heroImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <Text style={s.heroEmoji}>{recipe.emoji}</Text>
@@ -489,6 +507,53 @@ export default function RecipeDetailScreen() {
         <Text style={[s.desc, { color: theme.subtext, marginBottom: 16 }]}>
           {recipe.description}
         </Text>
+
+        {isOwnRecipe && (
+          <View
+            style={[
+              s.ownerControls,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[s.ownerTitle, { color: theme.text }]}>
+                {recipe.isPublic ? "Public recipe" : "Private recipe"}
+              </Text>
+              <Text style={[s.ownerDesc, { color: theme.muted }]}>
+                {recipe.isPublic
+                  ? "This can appear in For You, search, and creator pages."
+                  : "Only you can see this recipe from your profile."}
+              </Text>
+            </View>
+            <TouchableOpacity
+              disabled={visibilitySaving}
+              onPress={toggleRecipeVisibility}
+              style={[
+                s.visibilityBtn,
+                {
+                  backgroundColor: recipe.isPublic
+                    ? theme.pillBg
+                    : theme.accent,
+                  borderColor: recipe.isPublic ? theme.border : theme.accent,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: recipe.isPublic ? theme.text : "#fff",
+                  fontWeight: "700",
+                  fontSize: 12,
+                }}
+              >
+                {visibilitySaving
+                  ? "Saving..."
+                  : recipe.isPublic
+                    ? "Make Private"
+                    : "Make Public"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Nutrition card */}
         {hasNutrition && (
@@ -916,6 +981,23 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   desc: { fontSize: 14, lineHeight: 22 },
+  ownerControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  ownerTitle: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
+  ownerDesc: { fontSize: 12, lineHeight: 18 },
+  visibilityBtn: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   nutritionCard: { padding: 14, borderRadius: 14, borderWidth: 1 },
   sectionLabel: {
     fontSize: 11,
@@ -1026,5 +1108,6 @@ const s = StyleSheet.create({
     height: "100%",
     position: "absolute",
     zIndex: 0,
+    backgroundColor: "#111",
   },
 });

@@ -382,8 +382,7 @@ export default function CreateScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false,
       quality: 0.55,
       base64: true,
     });
@@ -676,7 +675,7 @@ export default function CreateScreen() {
                         <Image
                           source={{ uri: imageUrl }}
                           style={cr.imagePreview}
-                          resizeMode="cover"
+                          resizeMode="contain"
                         />
                       ) : (
                         <View style={cr.imageEmpty}>
@@ -1168,6 +1167,7 @@ const cr = StyleSheet.create({
   imagePreview: {
     width: "100%",
     height: "100%",
+    backgroundColor: "#111",
   },
   imageEmpty: {
     alignItems: "center",

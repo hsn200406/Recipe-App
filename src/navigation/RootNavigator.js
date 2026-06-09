@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import CreateScreen from "../screens/CreateScreen";
 import CreatorScreen from "../screens/CreatorScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import EditRecipeScreen from "../screens/EditRecipeScreen";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
@@ -136,6 +137,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="EditRecipe" component={EditRecipeScreen} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />

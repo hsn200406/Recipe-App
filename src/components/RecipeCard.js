@@ -88,7 +88,7 @@ function RecipeCard({ recipe, followedCreators, onToggleFollow }) {
           <Image
             source={{ uri: recipe.imageUrl }}
             style={styles.heroImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <Text style={styles.heroEmoji}>{recipe.emoji}</Text>
@@ -396,5 +396,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     position: "absolute",
+    backgroundColor: "#111",
   },
 });

@@ -362,7 +362,7 @@ export default function SearchScreen() {
                       <Image
                         source={{ uri: recipe.imageUrl }}
                         style={sf.resultImage}
-                        resizeMode="cover"
+                        resizeMode="contain"
                       />
                     ) : (
                       <Text style={{ fontSize: 30 }}>
@@ -574,5 +574,6 @@ const sf = StyleSheet.create({
     width: "100%",
     height: "100%",
     position: "absolute",
+    backgroundColor: "#111",
   },
 });

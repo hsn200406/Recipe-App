@@ -115,7 +115,7 @@ export default function SavedScreen() {
                     <Image
                       source={{ uri: recipe.imageUrl }}
                       style={s.cardImage}
-                      resizeMode="cover"
+                      resizeMode="contain"
                     />
                   ) : (
                     <>
@@ -270,6 +270,7 @@ const s = StyleSheet.create({
   cardImage: {
     width: 88,
     height: 106,
+    backgroundColor: "#111",
   },
   cardGlow: { ...StyleSheet.absoluteFillObject },
   cardInfo: { flex: 1, padding: 12, gap: 6 },

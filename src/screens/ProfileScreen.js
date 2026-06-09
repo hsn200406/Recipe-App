@@ -482,7 +482,7 @@ export default function ProfileScreen() {
                     <Image
                       source={{ uri: recipe.imageUrl }}
                       style={s.recipeImage}
-                      resizeMode="cover"
+                      resizeMode="contain"
                     />
                   ) : (
                     <>
@@ -558,15 +558,28 @@ export default function ProfileScreen() {
 
                 <View style={s.recipeActions}>
                   {activeTab === "recipes" && (
-                    <TouchableOpacity
-                      onPress={(event) => {
-                        event?.stopPropagation?.();
-                        deleteRecipe(recipe);
-                      }}
-                      style={[s.deleteRecipeBtn, { borderColor: "#EF4444" }]}
-                    >
-                      <Text style={s.deleteRecipeText}>Delete</Text>
-                    </TouchableOpacity>
+                    <>
+                      <TouchableOpacity
+                        onPress={(event) => {
+                          event?.stopPropagation?.();
+                          navigation.navigate("EditRecipe", { recipe });
+                        }}
+                        style={[s.editRecipeBtn, { borderColor: theme.border }]}
+                      >
+                        <Text style={[s.editRecipeText, { color: theme.text }]}>
+                          Edit
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={(event) => {
+                          event?.stopPropagation?.();
+                          deleteRecipe(recipe);
+                        }}
+                        style={[s.deleteRecipeBtn, { borderColor: "#EF4444" }]}
+                      >
+                        <Text style={s.deleteRecipeText}>Delete</Text>
+                      </TouchableOpacity>
+                    </>
                   )}
 
                   <Text style={{ color: theme.muted, fontSize: 18 }}>›</Text>
@@ -737,15 +750,26 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
+  editRecipeBtn: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
 
   deleteRecipeText: {
     color: "#EF4444",
     fontSize: 12,
     fontWeight: "600",
   },
+  editRecipeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   recipeImage: {
     width: "100%",
     height: "100%",
+    backgroundColor: "#111",
   },
   modalOverlay: {
     flex: 1,
